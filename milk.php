@@ -160,9 +160,18 @@ try {
          *
          * Leaving the cow empty records bulk milk.
          */
+
+        /*
+         * Validate the selected cow.
+         * Farm Managers can only record milk for their assigned cows.
+         * Admins and Super Admins can use any active cow
+         * belonging to the selected farm.
+         */
         $cowId = null;
 
-        if ($selectedCow !== '') {
+        if ($selectedCow === '' && $role === 'farm_manager') {
+            $errors[] = 'Please select one of your assigned cows.';
+        } elseif ($selectedCow !== '') {
             $validatedCowId = filter_var(
                 $selectedCow,
                 FILTER_VALIDATE_INT
@@ -171,27 +180,46 @@ try {
             if (!$validatedCowId || $validatedCowId < 1) {
                 $errors[] = 'Please select a valid cow.';
             } else {
-                $cowCheck = $pdo->prepare(
-                    "SELECT cow_id
-                     FROM cows
-                     WHERE cow_id = ?
-                       AND farm_id = ?
-                       AND status = 'active'
-                     LIMIT 1"
-                );
+                if ($role === 'farm_manager') {
+                    $cowCheck = $pdo->prepare(
+                        "SELECT cow_id
+                         FROM cows
+                         WHERE cow_id = ?
+                           AND farm_id = ?
+                           AND manager_id = ?
+                           AND status = 'active'
+                         LIMIT 1"
+                    );
 
-                $cowCheck->execute([
-                    (int) $validatedCowId,
-                    $selectedFarmId
-                ]);
+                    $cowCheck->execute([
+                        (int) $validatedCowId,
+                        (int) $userFarmId,
+                        $userId
+                    ]);
+                } else {
+                    $cowCheck = $pdo->prepare(
+                        "SELECT cow_id
+                         FROM cows
+                         WHERE cow_id = ?
+                           AND farm_id = ?
+                           AND status = 'active'
+                         LIMIT 1"
+                    );
+
+                    $cowCheck->execute([
+                        (int) $validatedCowId,
+                        $selectedFarmId
+                    ]);
+                }
 
                 if (!$cowCheck->fetch()) {
-                    $errors[] = 'Only active cows from the selected farm can be used.';
+                    $errors[] = 'The selected cow is not active or is not assigned to you.';
                 } else {
                     $cowId = (int) $validatedCowId;
                 }
             }
         }
+
 
         /*
          * Save the record only when validation succeeds.
@@ -227,24 +255,47 @@ try {
     }
 
     /*
-     * Load ONLY active cows for the selected farm.
+    
+    /*
+     * Load active cows available to the current user.
      */
     if ($selectedFarmId > 0) {
-        $cowStmt = $pdo->prepare(
-            "SELECT cow_id, tag_number, cow_name
-             FROM cows
-             WHERE farm_id = ?
-               AND status = 'active'
-             ORDER BY tag_number"
-        );
+        if ($role === 'farm_manager') {
+            $cowStmt = $pdo->prepare(
+                "SELECT cow_id, tag_number, cow_name
+                 FROM cows
+                 WHERE farm_id = ?
+                   AND manager_id = ?
+                   AND status = 'active'
+                 ORDER BY tag_number"
+            );
 
-        $cowStmt->execute([$selectedFarmId]);
+            $cowStmt->execute([
+                (int) $userFarmId,
+                $userId
+            ]);
+        } else {
+            $cowStmt = $pdo->prepare(
+                "SELECT cow_id, tag_number, cow_name
+                 FROM cows
+                 WHERE farm_id = ?
+                   AND status = 'active'
+                 ORDER BY tag_number"
+            );
+
+            $cowStmt->execute([$selectedFarmId]);
+        }
 
         $cows = $cowStmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /*
+  
+    /*
      * Today's milk total and recent records.
+     * Super Admin: all farms.
+     * Admin: their own farm.
+     * Farm Manager: their assigned cows only.
      */
     if ($isSuperAdmin) {
         $totalStmt = $pdo->query(
@@ -254,7 +305,8 @@ try {
         );
 
         $recordsStmt = $pdo->query(
-            "SELECT mp.production_date,
+            "SELECT mp.production_id,
+                    mp.production_date,
                     mp.milking_session,
                     mp.quantity_litres,
                     mp.notes,
@@ -263,13 +315,53 @@ try {
                     c.cow_name,
                     u.full_name AS recorder
              FROM milk_production mp
-             JOIN farms f ON f.farm_id = mp.farm_id
+             INNER JOIN farms f ON f.farm_id = mp.farm_id
              LEFT JOIN cows c ON c.cow_id = mp.cow_id
              LEFT JOIN users u ON u.user_id = mp.recorded_by
              ORDER BY mp.production_date DESC,
                       mp.production_id DESC
              LIMIT 100"
         );
+    } elseif ($role === 'farm_manager') {
+        $totalStmt = $pdo->prepare(
+            "SELECT COALESCE(SUM(mp.quantity_litres), 0)
+             FROM milk_production mp
+             INNER JOIN cows c ON c.cow_id = mp.cow_id
+             WHERE mp.farm_id = ?
+               AND c.manager_id = ?
+               AND mp.production_date = CURDATE()"
+        );
+
+        $totalStmt->execute([
+            (int) $userFarmId,
+            $userId
+        ]);
+
+        $recordsStmt = $pdo->prepare(
+            "SELECT mp.production_id,
+                    mp.production_date,
+                    mp.milking_session,
+                    mp.quantity_litres,
+                    mp.notes,
+                    f.farm_name,
+                    c.tag_number,
+                    c.cow_name,
+                    u.full_name AS recorder
+             FROM milk_production mp
+             INNER JOIN cows c ON c.cow_id = mp.cow_id
+             INNER JOIN farms f ON f.farm_id = mp.farm_id
+             LEFT JOIN users u ON u.user_id = mp.recorded_by
+             WHERE mp.farm_id = ?
+               AND c.manager_id = ?
+             ORDER BY mp.production_date DESC,
+                      mp.production_id DESC
+             LIMIT 100"
+        );
+
+        $recordsStmt->execute([
+            (int) $userFarmId,
+            $userId
+        ]);
     } else {
         $totalStmt = $pdo->prepare(
             "SELECT COALESCE(SUM(quantity_litres), 0)
@@ -281,7 +373,8 @@ try {
         $totalStmt->execute([(int) $userFarmId]);
 
         $recordsStmt = $pdo->prepare(
-            "SELECT mp.production_date,
+            "SELECT mp.production_id,
+                    mp.production_date,
                     mp.milking_session,
                     mp.quantity_litres,
                     mp.notes,
@@ -290,7 +383,7 @@ try {
                     c.cow_name,
                     u.full_name AS recorder
              FROM milk_production mp
-             JOIN farms f ON f.farm_id = mp.farm_id
+             INNER JOIN farms f ON f.farm_id = mp.farm_id
              LEFT JOIN cows c ON c.cow_id = mp.cow_id
              LEFT JOIN users u ON u.user_id = mp.recorded_by
              WHERE mp.farm_id = ?
@@ -301,6 +394,7 @@ try {
 
         $recordsStmt->execute([(int) $userFarmId]);
     }
+
 
     $todayTotal = (float) $totalStmt->fetchColumn();
     $records = $recordsStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -846,8 +940,13 @@ try {
             <section class="milk-card">
                 <h2>Record Milk Production</h2>
                 <p class="card-description">
-                    Choose a farm, select an active cow if applicable,
-                    and enter the quantity collected.
+                    <?php if ($role === 'farm_manager'): ?>
+                        Record milk collected from cows assigned to you.
+                    <?php elseif ($isSuperAdmin): ?>
+                        Select a farm and record milk production from its active cows.
+                    <?php else: ?>
+                        Record milk production from active cows on your farm.
+                    <?php endif; ?>
                 </p>
 
                 <form method="POST" action="milk.php" class="milk-form">

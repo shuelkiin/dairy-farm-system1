@@ -44,9 +44,83 @@ if ($isSuperAdmin) {
         GROUP BY f.farm_id, f.farm_name
         ORDER BY f.farm_name
     ")->fetchAll();
+} elseif ($role === 'farm_manager') {
+    $farmCount = $farmId ? 1 : 0;
+    $managerId = (int) $_SESSION['user_id'];
+
+    // Total cows assigned to this manager.
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM cows
+        WHERE farm_id = :farm
+          AND manager_id = :manager
+    ");
+    $stmt->execute([
+        'farm' => $farmId ?: 0,
+        'manager' => $managerId
+    ]);
+    $cowCount = (int) $stmt->fetchColumn();
+
+    // Today's milk from this manager's cows.
+    $stmt = $pdo->prepare("
+        SELECT COALESCE(SUM(mp.quantity_litres), 0)
+        FROM milk_production mp
+        INNER JOIN cows c ON c.cow_id = mp.cow_id
+        WHERE mp.farm_id = :farm
+          AND c.manager_id = :manager
+          AND mp.production_date = CURDATE()
+    ");
+    $stmt->execute([
+        'farm' => $farmId ?: 0,
+        'manager' => $managerId
+    ]);
+    $milkToday = (float) $stmt->fetchColumn();
+
+    // Health records for this manager's cows.
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM health_records hr
+        INNER JOIN cows c ON c.cow_id = hr.cow_id
+        WHERE c.farm_id = :farm
+          AND c.manager_id = :manager
+          AND hr.status IN ('ongoing', 'under_treatment')
+    ");
+    $stmt->execute([
+        'farm' => $farmId ?: 0,
+        'manager' => $managerId
+    ]);
+    $healthCount = (int) $stmt->fetchColumn();
+
+    // Farm card, showing only this manager's cows and milk.
+
+    $stmt = $pdo->prepare("
+    SELECT f.farm_id, f.farm_name,
+           COUNT(DISTINCT c.cow_id) AS cow_count,
+           COALESCE((
+               SELECT SUM(mp.quantity_litres)
+               FROM milk_production mp
+               INNER JOIN cows mc ON mc.cow_id = mp.cow_id
+               WHERE mp.farm_id = f.farm_id
+                 AND mc.manager_id = :manager_milk
+                 AND mp.production_date = CURDATE()
+           ), 0) AS milk_today
+    FROM farms f
+    LEFT JOIN cows c
+      ON c.farm_id = f.farm_id
+     AND c.manager_id = :manager_cows
+    WHERE f.farm_id = :farm
+    GROUP BY f.farm_id, f.farm_name
+");
+
+    $stmt->execute([
+        'manager_milk' => $managerId,
+        'manager_cows' => $managerId,
+        'farm' => $farmId ?: 0
+    ]);
+
+    $farms = $stmt->fetchAll();
 } else {
     $farmCount = $farmId ? 1 : 0;
-
     $stmt = $pdo->prepare("
         SELECT COUNT(*) FROM cows WHERE farm_id = :farm
     ");
@@ -98,22 +172,53 @@ $stmt = $pdo->prepare($feedSql);
 $stmt->execute($isSuperAdmin ? [] : ['farm' => $farmId ?: 0]);
 $feedStock = (float)$stmt->fetchColumn();
 
-$milkSql = $isSuperAdmin
-    ? "SELECT mp.*, f.farm_name, c.tag_number, c.cow_name
-       FROM milk_production mp
-       JOIN farms f ON f.farm_id = mp.farm_id
-       LEFT JOIN cows c ON c.cow_id = mp.cow_id
-       ORDER BY mp.production_id DESC LIMIT 8"
-    : "SELECT mp.*, f.farm_name, c.tag_number, c.cow_name
-       FROM milk_production mp
-       JOIN farms f ON f.farm_id = mp.farm_id
-       LEFT JOIN cows c ON c.cow_id = mp.cow_id
-       WHERE mp.farm_id = :farm
-       ORDER BY mp.production_id DESC LIMIT 8";
 
-$stmt = $pdo->prepare($milkSql);
-$stmt->execute($isSuperAdmin ? [] : ['farm' => $farmId ?: 0]);
+if ($isSuperAdmin) {
+    $milkSql = "
+        SELECT mp.*, f.farm_name, c.tag_number, c.cow_name
+        FROM milk_production mp
+        JOIN farms f ON f.farm_id = mp.farm_id
+        LEFT JOIN cows c ON c.cow_id = mp.cow_id
+        ORDER BY mp.production_id DESC
+        LIMIT 8
+    ";
+
+    $stmt = $pdo->query($milkSql);
+} elseif ($role === 'farm_manager') {
+    $milkSql = "
+        SELECT mp.*, f.farm_name, c.tag_number, c.cow_name
+        FROM milk_production mp
+        JOIN farms f ON f.farm_id = mp.farm_id
+        INNER JOIN cows c ON c.cow_id = mp.cow_id
+        WHERE mp.farm_id = :farm
+          AND c.manager_id = :manager
+        ORDER BY mp.production_id DESC
+        LIMIT 8
+    ";
+
+    $stmt = $pdo->prepare($milkSql);
+    $stmt->execute([
+        'farm' => $farmId ?: 0,
+        'manager' => (int) $_SESSION['user_id']
+    ]);
+} else {
+    // Admin continues to see all milk records for their farm.
+    $milkSql = "
+        SELECT mp.*, f.farm_name, c.tag_number, c.cow_name
+        FROM milk_production mp
+        JOIN farms f ON f.farm_id = mp.farm_id
+        LEFT JOIN cows c ON c.cow_id = mp.cow_id
+        WHERE mp.farm_id = :farm
+        ORDER BY mp.production_id DESC
+        LIMIT 8
+    ";
+
+    $stmt = $pdo->prepare($milkSql);
+    $stmt->execute(['farm' => $farmId ?: 0]);
+}
+
 $recentMilk = $stmt->fetchAll();
+
 
 $pageTitle = $pageTitle ?? 'Dashboard';
 $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
