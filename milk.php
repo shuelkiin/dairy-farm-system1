@@ -985,9 +985,11 @@ try {
                             type="date"
                             id="production_date"
                             name="production_date"
-                            value="<?= e($selectedDate) ?>"
+                            value="<?= date('Y-m-d') ?>"
+                            min="<?= date('Y-m-d') ?>"
                             max="<?= date('Y-m-d') ?>"
-                            required>
+                            required
+                            readonly>
                     </div>
 
                     <div class="milk-field">
