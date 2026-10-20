@@ -864,9 +864,13 @@ try {
                     <span>✚</span> Health &amp; Vaccinations
                 </a>
 
-                <a href="feeds.php">
-                    <span>▤</span> Feed Inventory
-                </a>
+
+                <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
+                    <a class="nav-link active" href="feed_inventory.php">
+                        <span class="nav-icon">🌾</span> Feed Inventory
+                    </a>
+                <?php endif; ?>
+
 
                 <a href="reports.php">
                     <span>▥</span> Reports

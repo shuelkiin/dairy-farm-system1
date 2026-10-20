@@ -252,7 +252,13 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
                     <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
                 <?php endif; ?>
 
-                <a href="feeds.php">▤ &nbsp; Feed Inventory</a>
+
+                <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
+                    <a class="nav-link active" href="feeds.php">
+                        <span class="nav-icon">🌾</span> Feed Inventory
+                    </a>
+                <?php endif; ?>
+
                 <a href="reports.php">▥ &nbsp; Reports</a>
                 <?php if ($isSuperAdmin): ?>
                     <a href="users.php">♙ &nbsp; Manage Users</a>
@@ -388,7 +394,11 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
                                 <a href="cows.php"><span class="action-icon">♧</span><span><strong>Register a cow</strong><small>Add identification and breed</small></span><b>›</b></a>
                                 <a href="milk.php"><span class="action-icon">◉</span><span><strong>Record milk</strong><small>Log a milking session</small></span><b>›</b></a>
                                 <a href="health.php"><span class="action-icon">♡</span><span><strong>Health record</strong><small>Track health and vaccination</small></span><b>›</b></a>
-                                <a href="feeds.php"><span class="action-icon">▤</span><span><strong>Feed inventory</strong><small>Review stock and usage</small></span><b>›</b></a>
+                                <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
+                                    <a href="feeds.php"><span class="action-icon">🌾</span><span><strong>Feed Inventory</strong><small>Track inventory</small></span><b>›</b></a>
+
+                                <?php endif; ?>
+
                                 <a href="reports.php"><span class="action-icon">▥</span><span><strong>Reports</strong><small>View production summaries</small></span><b>›</b></a>
                             </div>
                         </section>
