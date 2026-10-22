@@ -127,17 +127,44 @@ $farmSql = '';
 $farmParams = [];
 
 if ($selectedFarm > 0) {
-    $farmSql = ' AND farm_id = ?';
+    $farmSql = ' AND mp.farm_id = ?';
     $farmParams[] = $selectedFarm;
 } elseif (!$isSuperAdmin) {
-    $farmSql = ' AND farm_id = ?';
+    $farmSql = ' AND mp.farm_id = ?';
+    $farmParams[] = $farmId;
+}
+
+$farmSql = '';
+$farmParams = [];
+
+if ($role === 'farm_manager') {
+    // Farm managers only see milk records for their assigned cows.
+    $farmSql = ' AND EXISTS (
+        SELECT 1
+        FROM cows AS assigned_cow
+        WHERE assigned_cow.cow_id = mp.cow_id
+          AND assigned_cow.farm_id = ?
+          AND assigned_cow.manager_id = ?
+    )';
+
+    $farmParams[] = $farmId;
+    $farmParams[] = $userId;
+} elseif ($selectedFarm > 0) {
+    $farmSql = ' AND mp.farm_id = ?';
+    $farmParams[] = $selectedFarm;
+} elseif (!$isSuperAdmin) {
+    $farmSql = ' AND mp.farm_id = ?';
     $farmParams[] = $farmId;
 }
 
 $cowFarmSql = '';
 $cowFarmParams = [];
 
-if ($selectedFarm > 0) {
+if ($role === 'farm_manager') {
+    $cowFarmSql = ' AND c.farm_id = ? AND c.manager_id = ?';
+    $cowFarmParams[] = $farmId;
+    $cowFarmParams[] = $userId;
+} elseif ($selectedFarm > 0) {
     $cowFarmSql = ' AND c.farm_id = ?';
     $cowFarmParams[] = $selectedFarm;
 } elseif (!$isSuperAdmin) {
@@ -149,25 +176,29 @@ $milkParams = [$startDate, $endDate, ...$farmParams];
 $healthParams = [$startDate, $endDate, ...$cowFarmParams];
 $vaccineParams = [$startDate, $endDate, ...$cowFarmParams];
 
+
 try {
+
     // Milk production during the selected period.
     $milkSummary = reportQuery(
         "SELECT
-            COALESCE(SUM(quantity_litres), 0) AS total_litres,
+            COALESCE(SUM(mp.quantity_litres), 0) AS total_litres,
             COUNT(*) AS total_entries,
-            COALESCE(AVG(quantity_litres), 0) AS average_litres
-         FROM milk_production
-         WHERE production_date BETWEEN ? AND ? $farmSql",
+            COALESCE(AVG(mp.quantity_litres), 0) AS average_litres
+         FROM milk_production AS mp
+         WHERE mp.production_date BETWEEN ? AND ? $farmSql",
         $milkParams
     )[0];
 
     // Daily milk production chart data.
     $dailyMilk = reportQuery(
-        "SELECT production_date, SUM(quantity_litres) AS litres
-         FROM milk_production
-         WHERE production_date BETWEEN ? AND ? $farmSql
-         GROUP BY production_date
-         ORDER BY production_date",
+        "SELECT
+            mp.production_date,
+            SUM(mp.quantity_litres) AS litres
+         FROM milk_production AS mp
+         WHERE mp.production_date BETWEEN ? AND ? $farmSql
+         GROUP BY mp.production_date
+         ORDER BY mp.production_date",
         $milkParams
     );
 
@@ -281,8 +312,14 @@ try {
 } catch (Throwable $exception) {
     error_log('DairyFlow reports error: ' . $exception->getMessage());
     http_response_code(500);
-    exit('Unable to generate reports. Check that your database tables and column names match your project schema.');
+
+    exit('Report error: ' . htmlspecialchars(
+        $exception->getMessage(),
+        ENT_QUOTES,
+        'UTF-8'
+    ));
 }
+
 
 $milkTotal = (float) $milkSummary['total_litres'];
 $averageMilk = (float) $milkSummary['average_litres'];

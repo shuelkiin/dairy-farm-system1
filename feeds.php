@@ -1314,7 +1314,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
 
 
             <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
-                <a class="nav-link active" href="feed_inventory.php">
+                <a class="nav-link active" href="feeds.php">
                     <span class="nav-icon">🌾</span> Feed Inventory
                 </a>
             <?php endif; ?>

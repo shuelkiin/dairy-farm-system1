@@ -278,6 +278,10 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
                         <small><?= e(ucwords(str_replace('_', ' ', $role))) ?></small>
                     </div>
                 </div>
+                <a class="nav-link" href="change_password.php">
+                    <span class="nav-icon">🔐</span>
+                    Change Password
+                </a>
                 <a class="logout" href="logout.php">↪ &nbsp; Sign out</a>
             </div>
         </aside>
