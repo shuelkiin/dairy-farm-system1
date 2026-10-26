@@ -249,6 +249,8 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
                 <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
                     <a href="cows.php">♧ &nbsp; Cows & Records</a>
                     <a href="milk.php">◉ &nbsp; Milk Production</a>
+                    <a href="search.php">⌕ &nbsp; serch cow</a>
+
                     <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
                 <?php endif; ?>
 
@@ -332,6 +334,7 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
                         <div class="metric-number"><?= number_format($feedStock, 1) ?></div>
                         <p class="metric-foot">Combined stock quantities</p>
                     </article>
+
                 </div>
 
                 <?php if ($role === 'store_manager'): ?>
