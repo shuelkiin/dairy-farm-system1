@@ -816,34 +816,53 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
 <body>
 
     <aside class="sidebar">
-        <div class="brand">
-            <div class="logo">DF</div>
-            <div>
-                <div class="brand-name">DairyFlow</div>
-                <div class="brand-sub">FARM MANAGEMENT</div>
-            </div>
-        </div>
+        <a href="index.php" class="brand">
+            <span class="logo small-logo">DF</span>
+            <span>DairyFlow<small>FARM MANAGEMENT</small></span>
+        </a>
 
-        <div class="nav-label">MAIN MENU</div>
-        <a class="nav-link" href="index.php">▦ &nbsp; Dashboard</a>
-        <a class="nav-link" href="farms.php">⌂ &nbsp; Farms</a>
-        <a class="nav-link" href="cows.php">🐄 &nbsp; Cows</a>
-        <a class="nav-link" href="milk.php">🥛 &nbsp; Milk Production</a>
-        <a class="nav-link" href="health.php">✚ &nbsp; Health & Vaccines</a>
-        <a class="nav-link" href="weights.php">⚖ &nbsp; Cow Weights</a>
-        <a class="nav-link" href="feed_inventory.php">🌾 &nbsp; Feed Inventory</a>
-        <a class="nav-link active" href="reports.php">▤ &nbsp; Reports & Analytics</a>
+        <p class="nav-label">WORKSPACE</p>
+        <nav>
+            <a class="active" href="index.php">▦ &nbsp; Dashboard</a>
+
+            <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
+                <a href="cows.php">♧ &nbsp; Cows & Records</a>
+                <a href="milk.php">◉ &nbsp; Milk Production</a>
+                <a href="search.php">⌕ &nbsp; serch cow</a>
+
+                <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
+            <?php endif; ?>
+
+
+            <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
+                <a href="feeds.php">🌾 &nbsp; Feed Inventory</a>
+
+            <?php endif; ?>
+
+            <a href="reports.php">▥ &nbsp; Reports</a>
+            <?php if ($isSuperAdmin): ?>
+                <a href="users.php">♙ &nbsp; Manage Users</a>
+                <a href="farms.php">⌂ &nbsp; Manage Farms</a>
+            <?php endif; ?>
+
+            <?php if ($role === 'admin'): ?>
+                <a href="users.php">♙ &nbsp; Manage Farm Managers</a>
+            <?php endif; ?>
+        </nav>
 
         <div class="sidebar-bottom">
-            <a class="nav-link" href="users.php">♙ &nbsp; Users</a>
-            <a class="nav-link" href="logout.php">↪ &nbsp; Sign Out</a>
-            <div class="user-mini">
-                <div class="avatar"><?= e($initial) ?></div>
+            <div class="user-chip">
+                <div class="avatar"><?= e(strtoupper(substr($_SESSION['full_name'], 0, 1))) ?></div>
                 <div>
-                    <div class="user-name"><?= e($user['full_name']) ?></div>
-                    <div class="user-role"><?= e($roleLabel) ?></div>
+                    <strong><?= e($_SESSION['full_name']) ?></strong>
+                    <small><?= e(ucwords(str_replace('_', ' ', $role))) ?></small>
                 </div>
             </div>
+            <a class="nav-link" href="change_password.php">
+                <span class="nav-icon">🔐</span>
+                Change Password
+            </a>
+            <a class="logout" href="logout.php">↪ &nbsp; Sign out</a>
         </div>
     </aside>
 

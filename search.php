@@ -422,12 +422,31 @@ $dashboardUrl = match ($role) {
             </a>
             <p class="nav-label">WORKSPACE</p>
             <nav>
-                <a href="<?= searchEscape($dashboardUrl) ?>">▦ Dashboard</a>
-                <a href="cows.php">♧ Cows &amp; Records</a>
-                <a class="active" href="search.php">⌕ Cow Search</a>
-                <a href="milk.php">◉ Milk Production</a>
-                <a href="health.php">♡ Health &amp; Vaccinations</a>
-                <a href="reports.php">▥ Reports</a>
+                <a class="active" href="index.php">▦ &nbsp; Dashboard</a>
+
+                <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
+                    <a href="cows.php">♧ &nbsp; Cows & Records</a>
+                    <a href="milk.php">◉ &nbsp; Milk Production</a>
+                    <a href="search.php">⌕ &nbsp; serch cow</a>
+
+                    <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
+                <?php endif; ?>
+
+
+                <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
+                    <a href="feeds.php">🌾 &nbsp; Feed Inventory</a>
+
+                <?php endif; ?>
+
+                <a href="reports.php">▥ &nbsp; Reports</a>
+                <?php if ($isSuperAdmin): ?>
+                    <a href="users.php">♙ &nbsp; Manage Users</a>
+                    <a href="farms.php">⌂ &nbsp; Manage Farms</a>
+                <?php endif; ?>
+
+                <?php if ($role === 'admin'): ?>
+                    <a href="users.php">♙ &nbsp; Manage Farm Managers</a>
+                <?php endif; ?>
             </nav>
             <div class="sidebar-bottom">
                 <div class="user-chip">

@@ -12,11 +12,16 @@ if (empty($_SESSION['user_id'])) {
 
 require_once __DIR__ . '/config/database.php';
 
+// Get logged-in user's role
+$role = $_SESSION['role'] ?? '';
+
+$isSuperAdmin = ($role === 'super_admin');
+
 /*
- * Database compatibility:
- * Supports a PDO connection named $pdo or a MySQLi
- * connection named $conn or $mysqli from database.php.
- */
+* Database compatibility:
+* Supports a PDO connection named $pdo or a MySQLi
+* connection named $conn or $mysqli from database.php.
+*/
 $db = $pdo ?? $conn ?? $mysqli ?? null;
 
 if (!$db instanceof PDO && !$db instanceof mysqli) {
@@ -117,10 +122,10 @@ $userId = (int) $_SESSION['user_id'];
 $userRows = dbAll(
     $db,
     "SELECT u.user_id, u.full_name, u.farm_id, r.role_name
-     FROM users u
-     JOIN roles r ON r.role_id = u.role_id
-     WHERE u.user_id = ? AND u.status = 'active'
-     LIMIT 1",
+FROM users u
+JOIN roles r ON r.role_id = u.role_id
+WHERE u.user_id = ? AND u.status = 'active'
+LIMIT 1",
     [$userId]
 );
 
@@ -149,9 +154,9 @@ if ($role !== 'super_admin' && !$userFarmId) {
 }
 
 /*
- * Super admins can see all farms.
- * Other roles are restricted to their assigned farm.
- */
+* Super admins can see all farms.
+* Other roles are restricted to their assigned farm.
+*/
 $farmFilter = '';
 $farmParams = [];
 
@@ -164,12 +169,12 @@ $farmRows = $role === 'super_admin'
     ? dbAll(
         $db,
         "SELECT farm_id, farm_name FROM farms
-         WHERE status = 'active' ORDER BY farm_name"
+WHERE status = 'active' ORDER BY farm_name"
     )
     : dbAll(
         $db,
         "SELECT farm_id, farm_name FROM farms
-         WHERE farm_id = ? AND status = 'active'",
+WHERE farm_id = ? AND status = 'active'",
         [$userFarmId]
     );
 
@@ -404,19 +409,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 /*
- * Load cows available to this user.
- * Only active, sick, pregnant or dry cows are offered.
- * Sold and deceased cows are excluded.
- */
+            * Load cows available to this user.
+            * Only active, sick, pregnant or dry cows are offered.
+            * Sold and deceased cows are excluded.
+            */
 $cows = dbAll(
     $db,
     "SELECT c.cow_id, c.tag_number, c.cow_name, c.farm_id,
             f.farm_name
-     FROM cows c
-     JOIN farms f ON f.farm_id = c.farm_id
-     WHERE c.status NOT IN ('sold', 'deceased')
-     $filterSql
-     ORDER BY f.farm_name, c.tag_number",
+            FROM cows c
+            JOIN farms f ON f.farm_id = c.farm_id
+            WHERE c.status NOT IN ('sold', 'deceased')
+            $filterSql
+            ORDER BY f.farm_name, c.tag_number",
     $filterParams
 );
 
@@ -424,18 +429,18 @@ $cows = dbAll(
 $stats = dbAll(
     $db,
     "SELECT
-        COUNT(DISTINCT CASE
+            COUNT(DISTINCT CASE
             WHEN h.status IN ('under_treatment', 'ongoing')
             THEN h.health_id END) AS open_cases,
-        COUNT(DISTINCT CASE
+            COUNT(DISTINCT CASE
             WHEN h.status = 'under_treatment'
             THEN h.health_id END) AS treatment_cases,
-        COUNT(DISTINCT CASE
+            COUNT(DISTINCT CASE
             WHEN h.status = 'recovered'
             THEN h.health_id END) AS recovered_cases
-     FROM health_records h
-     JOIN cows c ON c.cow_id = h.cow_id
-     WHERE 1=1 $filterSql",
+            FROM health_records h
+            JOIN cows c ON c.cow_id = h.cow_id
+            WHERE 1=1 $filterSql",
     $filterParams
 )[0] ?? [
     'open_cases' => 0,
@@ -446,10 +451,10 @@ $stats = dbAll(
 $upcoming = dbAll(
     $db,
     "SELECT COUNT(*) AS total
-     FROM vaccinations v
-     JOIN cows c ON c.cow_id = v.cow_id
-     WHERE v.next_due_date BETWEEN ? AND DATE_ADD(?, INTERVAL 30 DAY)
-     $filterSql",
+            FROM vaccinations v
+            JOIN cows c ON c.cow_id = v.cow_id
+            WHERE v.next_due_date BETWEEN ? AND DATE_ADD(?, INTERVAL 30 DAY)
+            $filterSql",
     array_merge([$today, $today], $filterParams)
 )[0]['total'] ?? 0;
 
@@ -461,13 +466,13 @@ $healthSearchSql = '';
 
 if ($search !== '') {
     $healthSearchSql = "
-        AND (
+            AND (
             c.tag_number LIKE ?
             OR c.cow_name LIKE ?
             OR h.condition_name LIKE ?
             OR h.status LIKE ?
-        )
-    ";
+            )
+            ";
 
     $like = '%' . $search . '%';
 
@@ -484,13 +489,13 @@ $healthRecords = dbAll(
     $db,
     "SELECT h.*, c.tag_number, c.cow_name, f.farm_name,
             u.full_name AS recorder_name
-     FROM health_records h
-     JOIN cows c ON c.cow_id = h.cow_id
-     JOIN farms f ON f.farm_id = c.farm_id
-     LEFT JOIN users u ON u.user_id = h.recorded_by
-     WHERE 1=1 $filterSql $healthSearchSql
-     ORDER BY h.record_date DESC, h.health_id DESC
-     LIMIT 200",
+            FROM health_records h
+            JOIN cows c ON c.cow_id = h.cow_id
+            JOIN farms f ON f.farm_id = c.farm_id
+            LEFT JOIN users u ON u.user_id = h.recorded_by
+            WHERE 1=1 $filterSql $healthSearchSql
+            ORDER BY h.record_date DESC, h.health_id DESC
+            LIMIT 200",
     $healthParams
 );
 
@@ -500,12 +505,12 @@ $vaccineSearchSql = '';
 
 if ($search !== '') {
     $vaccineSearchSql = "
-        AND (
+            AND (
             c.tag_number LIKE ?
             OR c.cow_name LIKE ?
             OR v.vaccine_name LIKE ?
-        )
-    ";
+            )
+            ";
 
     $like = '%' . $search . '%';
 
@@ -520,26 +525,26 @@ if ($search !== '') {
 $vaccinations = dbAll(
     $db,
     "SELECT v.*, c.tag_number, c.cow_name, f.farm_name
-     FROM vaccinations v
-     JOIN cows c ON c.cow_id = v.cow_id
-     JOIN farms f ON f.farm_id = c.farm_id
-     WHERE 1=1 $filterSql $vaccineSearchSql
-     ORDER BY v.vaccination_date DESC, v.vaccination_id DESC
-     LIMIT 200",
+            FROM vaccinations v
+            JOIN cows c ON c.cow_id = v.cow_id
+            JOIN farms f ON f.farm_id = c.farm_id
+            WHERE 1=1 $filterSql $vaccineSearchSql
+            ORDER BY v.vaccination_date DESC, v.vaccination_id DESC
+            LIMIT 200",
     $vaccineParams
 );
 
 $dueVaccinations = dbAll(
     $db,
     "SELECT v.*, c.tag_number, c.cow_name, f.farm_name
-     FROM vaccinations v
-     JOIN cows c ON c.cow_id = v.cow_id
-     JOIN farms f ON f.farm_id = c.farm_id
-     WHERE v.next_due_date >= ?
-       AND v.next_due_date <= DATE_ADD(?, INTERVAL 30 DAY)
-       $filterSql
-     ORDER BY v.next_due_date ASC
-     LIMIT 10",
+            FROM vaccinations v
+            JOIN cows c ON c.cow_id = v.cow_id
+            JOIN farms f ON f.farm_id = c.farm_id
+            WHERE v.next_due_date >= ?
+            AND v.next_due_date <= DATE_ADD(?, INTERVAL 30 DAY)
+                $filterSql
+                ORDER BY v.next_due_date ASC
+                LIMIT 10",
     array_merge([$today, $today], $filterParams)
 );
 
@@ -559,12 +564,14 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Health & Vaccination | DairyFlow</title>
+
     <style>
         :root {
             --green: #198754;
             --green-dark: #11643e;
             --green-light: #e9f7ef;
             --navy: #142b45;
+            --navy-light: #25445b;
             --ink: #263548;
             --muted: #788697;
             --line: #e6ebf0;
@@ -576,6 +583,10 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
 
         * {
             box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
@@ -601,18 +612,37 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             text-decoration: none;
         }
 
+        /* =========================
+       MAIN LAYOUT
+    ========================= */
+
         .layout {
             display: flex;
             min-height: 100vh;
         }
 
+        .main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* =========================
+       SIDEBAR
+    ========================= */
+
         .sidebar {
-            width: 245px;
+            width: 255px;
+            min-width: 255px;
+            min-height: 100vh;
             flex-shrink: 0;
-            padding: 27px 17px;
+            display: flex;
+            flex-direction: column;
+            padding: 25px 16px 18px;
             color: #fff;
             background: var(--navy);
         }
+
+        /* BRAND */
 
         .brand {
             display: flex;
@@ -621,59 +651,171 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             padding: 0 8px 28px;
             font-size: 19px;
             font-weight: 800;
+            color: #fff;
         }
 
-        .brand-icon {
+        .logo {
             display: grid;
             place-items: center;
-            width: 42px;
-            height: 42px;
+            width: 45px;
+            height: 45px;
+            flex-shrink: 0;
             border-radius: 13px;
             background: var(--green);
             color: #fff;
+            font-size: 17px;
+            font-weight: 900;
+        }
+
+        .small-logo {
+            width: 42px;
+            height: 42px;
         }
 
         .brand small {
             display: block;
             margin-top: 4px;
             color: #b8c6d6;
-            font-size: 10px;
-            letter-spacing: 2px;
+            font-size: 9px;
+            letter-spacing: 1.7px;
+            font-weight: 600;
         }
+
+        /* NAVIGATION LABEL */
 
         .nav-label {
             padding: 15px 11px 9px;
+            margin: 0;
             color: #a9b9ca;
             font-size: 10px;
             font-weight: 800;
             letter-spacing: 1.6px;
         }
 
-        .nav-link {
+        /* NAVIGATION */
+
+        .sidebar nav {
             display: flex;
-            gap: 12px;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .sidebar nav a {
+            display: flex;
             align-items: center;
+            gap: 10px;
             padding: 12px 13px;
-            margin: 4px 0;
             border-radius: 9px;
             color: #dbe4ed;
             font-size: 13px;
+            font-weight: 500;
+            transition: background .2s ease, color .2s ease;
         }
 
-        .nav-link:hover,
-        .nav-link.active {
-            background: #25445b;
+        .sidebar nav a:hover {
+            background: var(--navy-light);
             color: #fff;
         }
 
-        .nav-link.active {
+        .sidebar nav a.active {
+            background: var(--navy-light);
+            color: #fff;
             border-left: 3px solid #56d38c;
+            padding-left: 10px;
+            font-weight: 700;
         }
 
-        .main {
-            flex: 1;
+        /* SIDEBAR BOTTOM */
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding-top: 22px;
+            border-top: 1px solid rgba(255, 255, 255, .12);
+        }
+
+        /* USER PROFILE */
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 12px 8px 18px;
             min-width: 0;
         }
+
+        .user-chip .avatar {
+            display: grid;
+            place-items: center;
+            width: 39px;
+            height: 39px;
+            min-width: 39px;
+            border-radius: 50%;
+            background: var(--green-light);
+            color: var(--green-dark);
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .user-chip strong {
+            display: block;
+            color: #fff;
+            font-size: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        .user-chip small {
+            display: block;
+            margin-top: 4px;
+            color: #a9b9ca;
+            font-size: 10px;
+        }
+
+        /* CHANGE PASSWORD */
+
+        .sidebar-bottom .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 12px;
+            margin: 4px 0;
+            border-radius: 8px;
+            color: #dbe4ed;
+            font-size: 12px;
+            transition: .2s;
+        }
+
+        .sidebar-bottom .nav-link:hover {
+            background: var(--navy-light);
+            color: #fff;
+        }
+
+        .nav-icon {
+            font-size: 15px;
+        }
+
+        /* LOGOUT */
+
+        .logout {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            margin-top: 5px;
+            border-radius: 8px;
+            color: #ffb4ad;
+            font-size: 12px;
+            font-weight: 700;
+            transition: .2s;
+        }
+
+        .logout:hover {
+            background: rgba(220, 70, 70, .15);
+            color: #ff7770;
+        }
+
+        /* =========================
+       TOPBAR
+    ========================= */
 
         .topbar {
             display: flex;
@@ -706,6 +848,10 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             color: var(--green-dark);
             border-radius: 50%;
         }
+
+        /* =========================
+       CONTENT
+    ========================= */
 
         .content {
             max-width: 1500px;
@@ -752,6 +898,10 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             font-size: 12px;
             font-weight: 700;
         }
+
+        /* =========================
+       STATISTICS
+    ========================= */
 
         .stats {
             display: grid;
@@ -803,6 +953,10 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             color: var(--muted);
             font-size: 11px;
         }
+
+        /* =========================
+       FORMS
+    ========================= */
 
         .forms {
             display: grid;
@@ -886,6 +1040,10 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             resize: vertical;
         }
 
+        /* =========================
+       BUTTONS
+    ========================= */
+
         .btn {
             display: inline-flex;
             justify-content: center;
@@ -898,6 +1056,7 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             color: white;
             font-size: 12px;
             font-weight: 800;
+            transition: .2s;
         }
 
         .btn:hover {
@@ -916,6 +1075,10 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
         .btn-block {
             width: 100%;
         }
+
+        /* =========================
+       ALERTS
+    ========================= */
 
         .alert {
             padding: 14px 17px;
@@ -936,6 +1099,10 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             border: 1px solid #f2ceca;
         }
 
+        /* =========================
+       SECTIONS
+    ========================= */
+
         .section {
             margin-bottom: 25px;
         }
@@ -953,6 +1120,10 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             margin: 0;
         }
 
+        /* =========================
+       FILTERS
+    ========================= */
+
         .filters {
             display: flex;
             gap: 9px;
@@ -969,8 +1140,14 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             min-width: 155px;
         }
 
+        /* =========================
+       TABLES
+    ========================= */
+
         .table-wrap {
+            width: 100%;
             overflow-x: auto;
+            border-radius: 10px;
         }
 
         table {
@@ -999,6 +1176,14 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             color: var(--navy);
         }
 
+        tbody tr:hover {
+            background: #fafcfd;
+        }
+
+        /* =========================
+       STATUS BADGES
+    ========================= */
+
         .status {
             display: inline-block;
             padding: 5px 9px;
@@ -1021,6 +1206,10 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             background: #e5f7eb;
             color: #197343;
         }
+
+        /* =========================
+       DUE ITEMS
+    ========================= */
 
         .due-list {
             display: grid;
@@ -1049,12 +1238,20 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             font-weight: 800;
         }
 
+        /* =========================
+       EMPTY STATES
+    ========================= */
+
         .empty {
             padding: 25px;
             text-align: center;
             color: var(--muted);
             font-size: 13px;
         }
+
+        /* =========================
+       FOOTER
+    ========================= */
 
         .footer {
             padding: 10px 0 25px;
@@ -1063,9 +1260,14 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             font-size: 11px;
         }
 
-        @media(max-width:1100px) {
+        /* =========================
+       RESPONSIVE: TABLETS
+    ========================= */
+
+        @media (max-width: 1100px) {
             .sidebar {
-                width: 205px;
+                width: 220px;
+                min-width: 220px;
             }
 
             .stats {
@@ -1077,28 +1279,50 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             }
         }
 
-        @media(max-width:700px) {
+        /* =========================
+       RESPONSIVE: MOBILE
+    ========================= */
+
+        @media (max-width: 700px) {
             .layout {
                 display: block;
             }
 
             .sidebar {
                 width: 100%;
-                padding: 14px;
+                min-width: 0;
+                min-height: auto;
+                padding: 15px;
             }
 
             .brand {
-                padding-bottom: 12px;
+                padding-bottom: 15px;
             }
 
             .nav-label {
-                padding-top: 9px;
+                padding-top: 10px;
             }
 
-            .nav-link {
+            .sidebar nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+
+            .sidebar nav a {
                 display: inline-flex;
-                margin: 2px;
-                padding: 9px;
+                margin: 2px 0;
+                padding: 9px 10px;
+                font-size: 11px;
+            }
+
+            .sidebar-bottom {
+                margin-top: 15px;
+                padding-top: 12px;
+            }
+
+            .user-chip {
+                padding: 8px;
             }
 
             .topbar {
@@ -1142,34 +1366,90 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             .filters select {
                 width: 100%;
             }
+
+            .due-item {
+                align-items: flex-start;
+            }
+        }
+
+        /* =========================
+       SMALL MOBILE SCREENS
+    ========================= */
+
+        @media (max-width: 380px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .brand {
+                font-size: 17px;
+            }
+
+            .sidebar nav a {
+                font-size: 10px;
+                padding: 8px;
+            }
+
+            .page-heading {
+                gap: 10px;
+            }
         }
     </style>
+
 </head>
 
 <body>
     <div class="layout">
 
         <aside class="sidebar">
-            <div class="brand">
-                <div class="brand-icon">DF</div>
-                <div>DairyFlow<small>FARM MANAGEMENT</small></div>
+            <a href="index.php" class="brand">
+                <span class="logo small-logo">DF</span>
+                <span>DairyFlow<small>FARM MANAGEMENT</small></span>
+            </a>
+
+            <p class="nav-label">WORKSPACE</p>
+            <nav>
+                <a class="active" href="index.php">▦ &nbsp; Dashboard</a>
+
+                <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
+                    <a href="cows.php">♧ &nbsp; Cows & Records</a>
+                    <a href="milk.php">◉ &nbsp; Milk Production</a>
+                    <a href="search.php">⌕ &nbsp; serch cow</a>
+
+                    <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
+                <?php endif; ?>
+
+
+                <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
+                    <a href="feeds.php">🌾 &nbsp; Feed Inventory</a>
+
+                <?php endif; ?>
+
+                <a href="reports.php">▥ &nbsp; Reports</a>
+                <?php if ($isSuperAdmin): ?>
+                    <a href="users.php">♙ &nbsp; Manage Users</a>
+                    <a href="farms.php">⌂ &nbsp; Manage Farms</a>
+                <?php endif; ?>
+
+                <?php if ($role === 'admin'): ?>
+                    <a href="users.php">♙ &nbsp; Manage Farm Managers</a>
+                <?php endif; ?>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="user-chip">
+                    <div class="avatar"><?= e(strtoupper(substr($_SESSION['full_name'], 0, 1))) ?></div>
+                    <div>
+                        <strong><?= e($_SESSION['full_name']) ?></strong>
+                        <small><?= e(ucwords(str_replace('_', ' ', $role))) ?></small>
+                    </div>
+                </div>
+                <a class="nav-link" href="change_password.php">
+                    <span class="nav-icon">🔐</span>
+                    Change Password
+                </a>
+                <a class="logout" href="logout.php">↪ &nbsp; Sign out</a>
             </div>
-
-            <div class="nav-label">MAIN MENU</div>
-            <a class="nav-link" href="index.php">▦ &nbsp; Dashboard</a>
-            <a class="nav-link" href="cows.php">🐄 &nbsp; Cow Management</a>
-            <a class="nav-link" href="milk.php">🥛 &nbsp; Milk Production</a>
-            <a class="nav-link active" href="health.php">✚ &nbsp; Health & Vaccination</a>
-            <a class="nav-link" href="weights.php">⚖ &nbsp; Cow Weights</a>
-
-            <?php if (in_array($role, ['admin', 'super_admin'], true)): ?>
-                <div class="nav-label">MANAGEMENT</div>
-                <a class="nav-link" href="users.php">♙ &nbsp; Manage Users</a>
-                <a class="nav-link" href="farms.php">⌂ &nbsp; Farms</a>
-            <?php endif; ?>
-
-            <div class="nav-label">ACCOUNT</div>
-            <a class="nav-link" href="logout.php">↪ &nbsp; Logout</a>
         </aside>
 
         <main class="main">

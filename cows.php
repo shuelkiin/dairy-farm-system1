@@ -508,367 +508,399 @@ function cowStatusClass(string $status): string
 </head>
 
 <body>
-    <div class="cow-page">
-        <p><a href="index.php">← Back to Dashboard</a></p>
+    <div class="dashboard-layout">
 
-        <h1>Cow Management 🐄</h1>
-        <p class="cow-muted">Register your herd and keep track of each animal.</p>
-
-        <?php if ($success): ?>
-            <div class="cow-alert success">
-                <?= e($success) ?>
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <h2>DF</h2>
+                <span>DAIRY FARM MANAGEMENT</span>
             </div>
-        <?php endif; ?>
 
-        <?php foreach ($errors as $error): ?>
-            <div class="cow-alert error"><?= e($error) ?></div>
-        <?php endforeach; ?>
-        <?php if ($canRegisterCow): ?>
-            <section class="cow-card">
-                <h2>Register a New Cow</h2>
+            <nav>
+                <a class="active" href="index.php">▦ &nbsp; Dashboard</a>
+
+                <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
+                    <a href="cows.php">♧ &nbsp; Cows & Records</a>
+                    <a href="milk.php">◉ &nbsp; Milk Production</a>
+                    <a href="search.php">⌕ &nbsp; serch cow</a>
+
+                    <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
+                <?php endif; ?>
+
+                <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
+                    <a href="feeds.php">🌾 &nbsp; Feed Inventory</a>
+                <?php endif; ?>
+
+                <a href="reports.php">▥ &nbsp; Reports</a>
+
+                <?php if ($isSuperAdmin): ?>
+                    <a href="users.php">♙ &nbsp; Manage Users</a>
+                    <a href="farms.php">⌂ &nbsp; Manage Farms</a>
+                <?php endif; ?>
+
+                <?php if ($role === 'admin'): ?>
+                    <a href="users.php">♙ &nbsp; Manage Farm Managers</a>
+                <?php endif; ?>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="cow-page">
+                <h1>Cow Management 🐄</h1>
+                <p class="cow-muted">Register your herd and keep track of each animal.</p>
+
+                <?php if ($success): ?>
+                    <div class="cow-alert success">
+                        <?= e($success) ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php foreach ($errors as $error): ?>
+                    <div class="cow-alert error"><?= e($error) ?></div>
+                <?php endforeach; ?>
+                <?php if ($canRegisterCow): ?>
+                    <section class="cow-card">
+                        <h2>Register a New Cow</h2>
 
 
-                <form method="POST" class="cow-form">
-                    <input
-                        type="hidden"
-                        name="csrf_token"
-                        value="<?= e($_SESSION['csrf_token']) ?>">
+                        <form method="POST" class="cow-form">
+                            <input
+                                type="hidden"
+                                name="csrf_token"
+                                value="<?= e($_SESSION['csrf_token']) ?>">
 
-                    <?php if ($isSuperAdmin): ?>
-                        <div class="cow-field">
-                            <label for="farm_id">Select Farm *</label>
+                            <?php if ($isSuperAdmin): ?>
+                                <div class="cow-field">
+                                    <label for="farm_id">Select Farm *</label>
 
-                            <select
-                                id="farm_id"
-                                name="farm_id"
-                                required
-                                onchange="window.location.href='cows.php?farm_id=' + encodeURIComponent(this.value)">
-                                <option value="">Select a farm</option>
+                                    <select
+                                        id="farm_id"
+                                        name="farm_id"
+                                        required
+                                        onchange="window.location.href='cows.php?farm_id=' + encodeURIComponent(this.value)">
+                                        <option value="">Select a farm</option>
 
-                                <?php foreach ($farms as $farm): ?>
-                                    <option
-                                        value="<?= (int) $farm['farm_id'] ?>"
-                                        <?= (string) $farmId === (string) $farm['farm_id'] ? 'selected' : '' ?>>
-                                        <?= e($farm['farm_name']) ?>
+                                        <?php foreach ($farms as $farm): ?>
+                                            <option
+                                                value="<?= (int) $farm['farm_id'] ?>"
+                                                <?= (string) $farmId === (string) $farm['farm_id'] ? 'selected' : '' ?>>
+                                                <?= e($farm['farm_name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (in_array($role, ['super_admin', 'admin'], true)): ?>
+
+                                <div class="cow-field">
+                                    <label for="manager_id">Assign Farm Manager *</label>
+
+                                    <select id="manager_id" name="manager_id" required>
+                                        <option value="">Select an active farm manager</option>
+
+                                        <?php foreach ($managers as $manager): ?>
+                                            <option
+                                                value="<?= (int) $manager['user_id'] ?>"
+                                                <?= (string) ($_POST['manager_id'] ?? '') === (string) $manager['user_id'] ? 'selected' : '' ?>>
+                                                <?= e($manager['full_name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            <?php endif; ?>
+
+
+
+                            <div class="cow-field">
+                                <label for="tag_number">Cow Tag Number *</label>
+                                <input
+                                    type="text"
+                                    id="tag_number"
+                                    name="tag_number"
+                                    maxlength="100"
+                                    required
+                                    value="<?= e($_POST['tag_number'] ?? '') ?>"
+                                    placeholder="e.g. COW-001">
+                            </div>
+
+                            <div class="cow-field">
+                                <label for="cow_name">Cow Name</label>
+                                <input
+                                    type="text"
+                                    id="cow_name"
+                                    name="cow_name"
+                                    maxlength="100"
+                                    value="<?= e($_POST['cow_name'] ?? '') ?>"
+                                    placeholder="e.g. Bella">
+                            </div>
+
+                            <div class="cow-field">
+                                <label for="date_of_birth">Date of Birth</label>
+                                <input
+                                    type="date"
+                                    id="date_of_birth"
+                                    name="date_of_birth"
+                                    max="<?= date('Y-m-d') ?>"
+                                    value="<?= e($_POST['date_of_birth'] ?? '') ?>">
+                            </div>
+
+
+                            <div class="cow-field">
+                                <label for="breed">Breed *</label>
+                                <select id="breed" name="breed" required>
+                                    <option value="">Select breed</option>
+                                    <?php
+                                    $breeds = [
+                                        'Friesian',
+                                        'Ayrshire',
+                                        'Jersey',
+                                        'Guernsey',
+                                        'Brown Swiss',
+                                        'Sahiwal',
+                                        'Zebu',
+                                        'Crossbreed',
+                                        'Other'
+                                    ];
+
+                                    foreach ($breeds as $breedOption):
+                                    ?>
+                                        <option value="<?= e($breedOption) ?>"
+                                            <?= ($_POST['breed'] ?? '') === $breedOption ? 'selected' : '' ?>>
+                                            <?= e($breedOption) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+
+                            <div class="cow-field">
+                                <label for="gender">Gender *</label>
+                                <select id="gender" name="gender" required>
+                                    <option value="">Select gender</option>
+                                    <option value="female" <?= ($_POST['gender'] ?? '') === 'female' ? 'selected' : '' ?>>Female</option>
+                                    <option value="male" <?= ($_POST['gender'] ?? '') === 'male' ? 'selected' : '' ?>>Male</option>
+                                </select>
+                            </div>
+
+                            <div class="cow-field">
+                                <label for="origin">Cow Origin *</label>
+                                <select id="origin" name="origin" required>
+                                    <option value="">Select origin</option>
+                                    <option value="born_on_farm"
+                                        <?= ($_POST['origin'] ?? '') === 'born_on_farm'
+                                            ? 'selected' : '' ?>>
+                                        Born on this farm
                                     </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    <?php endif; ?>
-                    <?php if (in_array($role, ['super_admin', 'admin'], true)): ?>
-
-                        <div class="cow-field">
-                            <label for="manager_id">Assign Farm Manager *</label>
-
-                            <select id="manager_id" name="manager_id" required>
-                                <option value="">Select an active farm manager</option>
-
-                                <?php foreach ($managers as $manager): ?>
-                                    <option
-                                        value="<?= (int) $manager['user_id'] ?>"
-                                        <?= (string) ($_POST['manager_id'] ?? '') === (string) $manager['user_id'] ? 'selected' : '' ?>>
-                                        <?= e($manager['full_name']) ?>
+                                    <option value="acquired"
+                                        <?= ($_POST['origin'] ?? 'acquired') === 'acquired'
+                                            ? 'selected' : '' ?>>
+                                        Acquired
                                     </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    <?php endif; ?>
+                                </select>
+                            </div>
 
+                            <div class="cow-field full" id="mother-section" hidden>
+                                <label for="mother_search">Mother Cow *</label>
 
+                                <input
+                                    type="text"
+                                    id="mother_search"
+                                    list="mother-options"
+                                    placeholder="Search by mother name or tag number"
+                                    autocomplete="off">
 
-                    <div class="cow-field">
-                        <label for="tag_number">Cow Tag Number *</label>
-                        <input
-                            type="text"
-                            id="tag_number"
-                            name="tag_number"
-                            maxlength="100"
-                            required
-                            value="<?= e($_POST['tag_number'] ?? '') ?>"
-                            placeholder="e.g. COW-001">
-                    </div>
+                                <datalist id="mother-options">
+                                    <?php foreach ($parents as $parent): ?>
+                                        <option
+                                            value="<?= e(
+                                                        ($parent['cow_name'] ?: 'Unnamed')
+                                                            . ' (' . $parent['tag_number'] . ')'
+                                                    ) ?>"
+                                            data-mother-id="<?= (int) $parent['cow_id'] ?>"
+                                            data-farm-id="<?= (int) $parent['farm_id'] ?>"></option>
+                                    <?php endforeach; ?>
+                                </datalist>
 
-                    <div class="cow-field">
-                        <label for="cow_name">Cow Name</label>
-                        <input
-                            type="text"
-                            id="cow_name"
-                            name="cow_name"
-                            maxlength="100"
-                            value="<?= e($_POST['cow_name'] ?? '') ?>"
-                            placeholder="e.g. Bella">
-                    </div>
+                                <input
+                                    type="hidden"
+                                    name="mother_id"
+                                    id="mother_id"
+                                    value="<?= e($_POST['mother_id'] ?? '') ?>">
 
-                    <div class="cow-field">
-                        <label for="date_of_birth">Date of Birth</label>
-                        <input
-                            type="date"
-                            id="date_of_birth"
-                            name="date_of_birth"
-                            max="<?= date('Y-m-d') ?>"
-                            value="<?= e($_POST['date_of_birth'] ?? '') ?>">
-                    </div>
+                                <small class="cow-muted">
+                                    Start typing the mother's name or tag number, then select
+                                    the matching suggestion.
+                                </small>
+                            </div>
 
+                            <div class="cow-field">
+                                <label for="status">Status *</label>
+                                <select id="status" name="status" required>
+                                    <?php foreach ($allowedStatuses as $option): ?>
+                                        <option
+                                            value="<?= e($option) ?>"
+                                            <?= ($_POST['status'] ?? 'active') === $option ? 'selected' : '' ?>>
+                                            <?= e(ucfirst($option)) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
 
-                    <div class="cow-field">
-                        <label for="breed">Breed *</label>
-                        <select id="breed" name="breed" required>
-                            <option value="">Select breed</option>
-                            <?php
-                            $breeds = [
-                                'Friesian',
-                                'Ayrshire',
-                                'Jersey',
-                                'Guernsey',
-                                'Brown Swiss',
-                                'Sahiwal',
-                                'Zebu',
-                                'Crossbreed',
-                                'Other'
-                            ];
+                            <div class="cow-field full">
+                                <label for="notes">Notes</label>
+                                <textarea
+                                    id="notes"
+                                    name="notes"
+                                    maxlength="2000"
+                                    placeholder="Additional information about the cow"><?= e($_POST['notes'] ?? '') ?></textarea>
+                            </div>
 
-                            foreach ($breeds as $breedOption):
-                            ?>
-                                <option value="<?= e($breedOption) ?>"
-                                    <?= ($_POST['breed'] ?? '') === $breedOption ? 'selected' : '' ?>>
-                                    <?= e($breedOption) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
+                            <button type="submit" class="cow-button">Register Cow</button>
+                        </form>
+                    </section>
+                <?php endif; ?>
+                <section class="cow-card">
+                    <h2>Registered Cows</h2>
 
+                    <p class="cow-muted">
+                        Total records: <?= count($cows) ?>
+                    </p>
 
-                    <div class="cow-field">
-                        <label for="gender">Gender *</label>
-                        <select id="gender" name="gender" required>
-                            <option value="">Select gender</option>
-                            <option value="female" <?= ($_POST['gender'] ?? '') === 'female' ? 'selected' : '' ?>>Female</option>
-                            <option value="male" <?= ($_POST['gender'] ?? '') === 'male' ? 'selected' : '' ?>>Male</option>
-                        </select>
-                    </div>
-
-                    <div class="cow-field">
-                        <label for="origin">Cow Origin *</label>
-                        <select id="origin" name="origin" required>
-                            <option value="">Select origin</option>
-                            <option value="born_on_farm"
-                                <?= ($_POST['origin'] ?? '') === 'born_on_farm'
-                                    ? 'selected' : '' ?>>
-                                Born on this farm
-                            </option>
-                            <option value="acquired"
-                                <?= ($_POST['origin'] ?? 'acquired') === 'acquired'
-                                    ? 'selected' : '' ?>>
-                                Acquired
-                            </option>
-                        </select>
-                    </div>
-
-                    <div class="cow-field full" id="mother-section" hidden>
-                        <label for="mother_search">Mother Cow *</label>
-
-                        <input
-                            type="text"
-                            id="mother_search"
-                            list="mother-options"
-                            placeholder="Search by mother name or tag number"
-                            autocomplete="off">
-
-                        <datalist id="mother-options">
-                            <?php foreach ($parents as $parent): ?>
-                                <option
-                                    value="<?= e(
-                                                ($parent['cow_name'] ?: 'Unnamed')
-                                                    . ' (' . $parent['tag_number'] . ')'
-                                            ) ?>"
-                                    data-mother-id="<?= (int) $parent['cow_id'] ?>"
-                                    data-farm-id="<?= (int) $parent['farm_id'] ?>"></option>
-                            <?php endforeach; ?>
-                        </datalist>
-
-                        <input
-                            type="hidden"
-                            name="mother_id"
-                            id="mother_id"
-                            value="<?= e($_POST['mother_id'] ?? '') ?>">
-
-                        <small class="cow-muted">
-                            Start typing the mother's name or tag number, then select
-                            the matching suggestion.
-                        </small>
-                    </div>
-
-                    <div class="cow-field">
-                        <label for="status">Status *</label>
-                        <select id="status" name="status" required>
-                            <?php foreach ($allowedStatuses as $option): ?>
-                                <option
-                                    value="<?= e($option) ?>"
-                                    <?= ($_POST['status'] ?? 'active') === $option ? 'selected' : '' ?>>
-                                    <?= e(ucfirst($option)) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="cow-field full">
-                        <label for="notes">Notes</label>
-                        <textarea
-                            id="notes"
-                            name="notes"
-                            maxlength="2000"
-                            placeholder="Additional information about the cow"><?= e($_POST['notes'] ?? '') ?></textarea>
-                    </div>
-
-                    <button type="submit" class="cow-button">Register Cow</button>
-                </form>
-            </section>
-        <?php endif; ?>
-        <section class="cow-card">
-            <h2>Registered Cows</h2>
-
-            <p class="cow-muted">
-                Total records: <?= count($cows) ?>
-            </p>
-
-            <div class="cow-table-wrap">
-                <table class="cow-table">
-                    <thead>
-                        <tr>
-                            <th>Tag Number</th>
-                            <th>Name</th>
-                            <th>Farm</th>
-                            <th>Breed</th>
-                            <th>Gender</th>
-                            <th>Date of Birth</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        <?php if (empty($cows)): ?>
-                            <tr>
-                                <td colspan="7">
-                                    No cow records found.
-                                </td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($cows as $cow): ?>
+                    <div class="cow-table-wrap">
+                        <table class="cow-table">
+                            <thead>
                                 <tr>
-                                    <td>
-                                        <?= e($cow['tag_number']) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= e($cow['cow_name'] ?: 'Unnamed') ?>
-                                    </td>
-
-                                    <td>
-                                        <?= e($cow['farm_name']) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= e($cow['breed'] ?: 'Not recorded') ?>
-                                    </td>
-
-                                    <td>
-                                        <?= e(ucfirst($cow['gender'])) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= e($cow['date_of_birth'] ?: 'Not recorded') ?>
-                                    </td>
-
-                                    <td>
-                                        <span class="cow-status <?= e(cowStatusClass($cow['status'])) ?>">
-                                            <?= e($cow['status']) ?>
-                                        </span>
-                                    </td>
+                                    <th>Tag Number</th>
+                                    <th>Name</th>
+                                    <th>Farm</th>
+                                    <th>Breed</th>
+                                    <th>Gender</th>
+                                    <th>Date of Birth</th>
+                                    <th>Status</th>
                                 </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                            </thead>
+
+                            <tbody>
+                                <?php if (empty($cows)): ?>
+                                    <tr>
+                                        <td colspan="7">
+                                            No cow records found.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($cows as $cow): ?>
+                                        <tr>
+                                            <td>
+                                                <?= e($cow['tag_number']) ?>
+                                            </td>
+
+                                            <td>
+                                                <?= e($cow['cow_name'] ?: 'Unnamed') ?>
+                                            </td>
+
+                                            <td>
+                                                <?= e($cow['farm_name']) ?>
+                                            </td>
+
+                                            <td>
+                                                <?= e($cow['breed'] ?: 'Not recorded') ?>
+                                            </td>
+
+                                            <td>
+                                                <?= e(ucfirst($cow['gender'])) ?>
+                                            </td>
+
+                                            <td>
+                                                <?= e($cow['date_of_birth'] ?: 'Not recorded') ?>
+                                            </td>
+
+                                            <td>
+                                                <span class="cow-status <?= e(cowStatusClass($cow['status'])) ?>">
+                                                    <?= e($cow['status']) ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const origin = document.getElementById('origin');
+                        const motherSection = document.getElementById('mother-section');
+                        const motherSearch = document.getElementById('mother_search');
+                        const motherId = document.getElementById('mother_id');
+                        const motherOptions = Array.from(
+                            document.querySelectorAll('#mother-options option')
+                        );
+                        const farmSelect = document.getElementById('farm_id');
+
+                        function updateMotherOptions() {
+                            const selectedFarm = farmSelect ? farmSelect.value : '';
+
+                            motherOptions.forEach(function(option) {
+                                const belongsToFarm = !selectedFarm ||
+                                    option.dataset.farmId === selectedFarm;
+
+                                option.disabled = !belongsToFarm;
+                            });
+
+                            // Clear a previously selected mother if it belongs to another farm.
+                            const selectedOption = motherOptions.find(function(option) {
+                                return option.dataset.motherId === motherId.value;
+                            });
+
+                            if (
+                                selectedOption &&
+                                selectedFarm &&
+                                selectedOption.dataset.farmId !== selectedFarm
+                            ) {
+                                motherSearch.value = '';
+                                motherId.value = '';
+                            }
+                        }
+
+                        function updateMotherField() {
+                            const isBornOnFarm = origin.value === 'born_on_farm';
+
+                            motherSection.hidden = !isBornOnFarm;
+                            motherSearch.required = isBornOnFarm;
+
+                            if (!isBornOnFarm) {
+                                motherSearch.value = '';
+                                motherId.value = '';
+                            }
+                        }
+
+                        motherSearch.addEventListener('input', function() {
+                            const match = motherOptions.find(function(option) {
+                                return option.value === motherSearch.value &&
+                                    !option.disabled;
+                            });
+
+                            motherId.value = match ? match.dataset.motherId : '';
+
+                            if (!match && motherSearch.value === '') {
+                                motherId.value = '';
+                            }
+                        });
+
+                        origin.addEventListener('change', updateMotherField);
+
+                        if (farmSelect) {
+                            farmSelect.addEventListener('change', updateMotherOptions);
+                        }
+
+                        updateMotherOptions();
+                        updateMotherField();
+                    });
+                </script>
             </div>
-        </section>
-
+        </main>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const origin = document.getElementById('origin');
-            const motherSection = document.getElementById('mother-section');
-            const motherSearch = document.getElementById('mother_search');
-            const motherId = document.getElementById('mother_id');
-            const motherOptions = Array.from(
-                document.querySelectorAll('#mother-options option')
-            );
-            const farmSelect = document.getElementById('farm_id');
-
-            function updateMotherOptions() {
-                const selectedFarm = farmSelect ? farmSelect.value : '';
-
-                motherOptions.forEach(function(option) {
-                    const belongsToFarm = !selectedFarm ||
-                        option.dataset.farmId === selectedFarm;
-
-                    option.disabled = !belongsToFarm;
-                });
-
-                // Clear a previously selected mother if it belongs to another farm.
-                const selectedOption = motherOptions.find(function(option) {
-                    return option.dataset.motherId === motherId.value;
-                });
-
-                if (
-                    selectedOption &&
-                    selectedFarm &&
-                    selectedOption.dataset.farmId !== selectedFarm
-                ) {
-                    motherSearch.value = '';
-                    motherId.value = '';
-                }
-            }
-
-            function updateMotherField() {
-                const isBornOnFarm = origin.value === 'born_on_farm';
-
-                motherSection.hidden = !isBornOnFarm;
-                motherSearch.required = isBornOnFarm;
-
-                if (!isBornOnFarm) {
-                    motherSearch.value = '';
-                    motherId.value = '';
-                }
-            }
-
-            motherSearch.addEventListener('input', function() {
-                const match = motherOptions.find(function(option) {
-                    return option.value === motherSearch.value &&
-                        !option.disabled;
-                });
-
-                motherId.value = match ? match.dataset.motherId : '';
-
-                if (!match && motherSearch.value === '') {
-                    motherId.value = '';
-                }
-            });
-
-            origin.addEventListener('change', updateMotherField);
-
-            if (farmSelect) {
-                farmSelect.addEventListener('change', updateMotherOptions);
-            }
-
-            updateMotherOptions();
-            updateMotherField();
-        });
-    </script>
-</body>
-
-</html>
-
 </body>
 
 </html>

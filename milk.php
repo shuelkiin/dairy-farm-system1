@@ -848,42 +848,30 @@ try {
             </div>
 
             <nav>
-                <a href="<?= e($dashboardUrl) ?>">
-                    <span>▦</span> Dashboard
-                </a>
+                <a class="active" href="index.php">▦ &nbsp; Dashboard</a>
 
-                <a href="cows.php">
-                    <span>♧</span> Cows &amp; Records
-                </a>
+                <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
+                    <a href="cows.php">♧ &nbsp; Cows & Records</a>
+                    <a href="milk.php">◉ &nbsp; Milk Production</a>
+                    <a href="search.php">⌕ &nbsp; serch cow</a>
 
-                <a href="milk.php" class="active" aria-current="page">
-                    <span>◉</span> Milk Production
-                </a>
-
-                <a href="health.php">
-                    <span>✚</span> Health &amp; Vaccinations
-                </a>
-
-
-                <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
-                    <a class="nav-link active" href="feed_inventory.php">
-                        <span class="nav-icon">🌾</span> Feed Inventory
-                    </a>
+                    <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
                 <?php endif; ?>
 
 
-                <a href="reports.php">
-                    <span>▥</span> Reports
-                </a>
+                <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
+                    <a href="feeds.php">🌾 &nbsp; Feed Inventory</a>
 
+                <?php endif; ?>
+
+                <a href="reports.php">▥ &nbsp; Reports</a>
                 <?php if ($isSuperAdmin): ?>
-                    <a href="users.php">
-                        <span>♙</span> Manage Users
-                    </a>
+                    <a href="users.php">♙ &nbsp; Manage Users</a>
+                    <a href="farms.php">⌂ &nbsp; Manage Farms</a>
+                <?php endif; ?>
 
-                    <a href="farms.php">
-                        <span>⌂</span> Manage Farms
-                    </a>
+                <?php if ($role === 'admin'): ?>
+                    <a href="users.php">♙ &nbsp; Manage Farm Managers</a>
                 <?php endif; ?>
             </nav>
 
@@ -903,12 +891,6 @@ try {
 
         <main class="milk-main">
 
-            <a
-                class="btn btn-secondary milk-mobile-back"
-                href="<?= e($dashboardUrl) ?>">
-                ← Back to Dashboard
-            </a>
-
             <header class="milk-topbar">
                 <div>
                     <h1>Milk Production</h1>
@@ -916,10 +898,6 @@ try {
                         Record and monitor milk collected on your farm.
                     </p>
                 </div>
-
-                <a class="btn btn-secondary" href="<?= e($dashboardUrl) ?>">
-                    ← Back to Dashboard
-                </a>
             </header>
 
             <?php if (isset($_GET['created'])): ?>
@@ -983,7 +961,7 @@ try {
                     <?php endif; ?>
 
                     <div class="milk-field">
-                        <label for="production_date">Production Date *</label>
+                       <label for="production_date">Production Date *</label>
 
                         <input
                             type="date"

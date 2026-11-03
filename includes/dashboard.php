@@ -244,7 +244,7 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
 
             <p class="nav-label">WORKSPACE</p>
             <nav>
-                <a class="active" href="<?= e(basename($_SERVER['PHP_SELF'])) ?>">▦ &nbsp; Dashboard</a>
+                <a class="active" href="index.php">▦ &nbsp; Dashboard</a>
 
                 <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
                     <a href="cows.php">♧ &nbsp; Cows & Records</a>
@@ -256,9 +256,8 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
 
 
                 <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
-                    <a class="nav-link active" href="feeds.php">
-                        <span class="nav-icon">🌾</span> Feed Inventory
-                    </a>
+                    <a href="feeds.php">🌾 &nbsp; Feed Inventory</a>
+
                 <?php endif; ?>
 
                 <a href="reports.php">▥ &nbsp; Reports</a>
