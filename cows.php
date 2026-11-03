@@ -363,176 +363,418 @@ function cowStatusClass(string $status): string
     <title>Cow Management | Dairy Farm System</title>
     <link rel="stylesheet" href="assets/style.css">
 
-    <style>
+    
+
+
+<style>
+    /* ==============================
+       GLOBAL STYLES
+    ============================== */
+    * {
+        box-sizing: border-box;
+    }
+
+    :root {
+        --background: #F4F7F5;
+        --ink: #20372F;
+        --navy: #142D35;
+        --lime: #C5E86C;
+        --muted: #8CA59E;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        background: var(--background);
+        color: var(--ink);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 14px;
+    }
+
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    /* ==============================
+       DASHBOARD LAYOUT
+    ============================== */
+    .dashboard-layout {
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* ==============================
+       SIDEBAR
+    ============================== */
+    .sidebar {
+        width: 250px;
+        min-width: 250px;
+        min-height: 100vh;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 26px 17px;
+        background: var(--navy);
+        color: #DCE8E3;
+    }
+
+    .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 0 10px 35px;
+        color: white;
+    }
+
+    .sidebar-brand h2 {
+        display: grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        margin: 0;
+        border-radius: 15px;
+        background: var(--lime);
+        color: var(--navy);
+        font-size: 15px;
+        font-weight: 800;
+    }
+
+    .sidebar-brand span {
+        display: block;
+        color: #A9BFBA;
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        line-height: 1.5;
+    }
+
+    .sidebar nav {
+        display: grid;
+        gap: 6px;
+    }
+
+    .sidebar nav a {
+        display: block;
+        padding: 12px;
+        border-radius: 10px;
+        color: #B9CBC5;
+        font-size: 12px;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+        background: #214B48;
+        color: white;
+    }
+
+    /* ==============================
+       MAIN CONTENT
+    ============================== */
+    .main-content {
+        flex: 1;
+        min-width: 0;
+        width: calc(100% - 250px);
+        margin: 0;
+        padding: 0;
+        background: var(--background);
+    }
+
+    /* ==============================
+       COW MANAGEMENT PAGE
+    ============================== */
+    .cow-page {
+        width: 100%;
+        max-width: 1250px;
+        margin: 0 auto;
+        padding: 28px;
+    }
+
+    .cow-page h1 {
+        margin-top: 0;
+        margin-bottom: 8px;
+        color: var(--ink);
+    }
+
+    .cow-page h2 {
+        margin-top: 0;
+        color: var(--ink);
+    }
+
+    /* ==============================
+       COW CARDS
+    ============================== */
+    .cow-card {
+        width: 100%;
+        background: #fff;
+        padding: 24px;
+        border-radius: 14px;
+        margin-bottom: 24px;
+        box-shadow: 0 3px 14px rgba(0, 0, 0, 0.06);
+    }
+
+    /* ==============================
+       REGISTRATION FORM
+    ============================== */
+    .cow-form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        width: 100%;
+    }
+
+    .cow-field {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        min-width: 0;
+    }
+
+    .cow-field label {
+        font-weight: 600;
+        color: #34483a;
+    }
+
+    .cow-field input,
+    .cow-field select,
+    .cow-field textarea {
+        width: 100%;
+        padding: 11px;
+        border: 1px solid #d5ddd7;
+        border-radius: 7px;
+        font: inherit;
+        background: #fff;
+        outline: none;
+    }
+
+    .cow-field input:focus,
+    .cow-field select:focus,
+    .cow-field textarea:focus {
+        border-color: #176b45;
+        box-shadow: 0 0 0 2px rgba(23, 107, 69, 0.1);
+    }
+
+    .cow-field textarea {
+        min-height: 85px;
+        resize: vertical;
+    }
+
+    .cow-field.full,
+    .cow-form button {
+        grid-column: 1 / -1;
+    }
+
+    /* ==============================
+       REGISTER BUTTON
+    ============================== */
+    .cow-button {
+        padding: 12px 18px;
+        background: #176b45;
+        color: white;
+        border: 0;
+        border-radius: 7px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    .cow-button:hover {
+        background: #105537;
+    }
+
+    /* ==============================
+       COW RECORDS TABLE
+    ============================== */
+    .cow-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .cow-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 760px;
+    }
+
+    .cow-table th,
+    .cow-table td {
+        text-align: left;
+        padding: 12px;
+        border-bottom: 1px solid #e6ebe7;
+    }
+
+    .cow-table th {
+        background: #f3f7f4;
+        color: var(--ink);
+        font-weight: 600;
+    }
+
+    .cow-table tbody tr:hover {
+        background: #f8fbf8;
+    }
+
+    /* ==============================
+       COW STATUS
+    ============================== */
+    .cow-status {
+        display: inline-block;
+        padding: 5px 9px;
+        border-radius: 20px;
+        background: #eef2ef;
+        text-transform: capitalize;
+    }
+
+    .cow-status.active,
+    .cow-status.pregnant {
+        background: #e2f5e8;
+        color: #176b45;
+    }
+
+    .cow-status.sick {
+        background: #fff0d8;
+        color: #885600;
+    }
+
+    .cow-status.deceased {
+        background: #fce8e8;
+        color: #9d2525;
+    }
+
+    .cow-status.sold {
+        background: #e8eaf6;
+        color: #3949ab;
+    }
+
+    .cow-status.dry {
+        background: #fff3e0;
+        color: #e65100;
+    }
+
+    /* ==============================
+       ALERT MESSAGES
+    ============================== */
+    .cow-alert {
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+    }
+
+    .cow-alert.success {
+        background: #e2f5e8;
+        color: #176b45;
+    }
+
+    .cow-alert.error {
+        background: #fdeaea;
+        color: #9d2525;
+    }
+
+    .cow-muted {
+        color: #68776d;
+    }
+
+    /* ==============================
+       TABLET RESPONSIVENESS
+    ============================== */
+    @media (max-width: 900px) {
+        .sidebar {
+            width: 220px;
+            min-width: 220px;
+        }
+
+        .main-content {
+            width: calc(100% - 220px);
+        }
+
         .cow-page {
-            max-width: 1250px;
-            margin: 0 auto;
-            padding: 28px;
+            padding: 20px;
+        }
+    }
+
+    /* ==============================
+       MOBILE RESPONSIVENESS
+    ============================== */
+    @media (max-width: 650px) {
+        .dashboard-layout {
+            flex-direction: column;
+        }
+
+        .sidebar {
+            width: 100%;
+            min-width: 100%;
+            min-height: auto;
+        }
+
+        .sidebar-brand {
+            padding-bottom: 20px;
+        }
+
+        .sidebar nav {
+            gap: 5px;
+        }
+
+        .main-content {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .cow-page {
+            padding: 14px;
         }
 
         .cow-card {
-            background: #fff;
-            padding: 24px;
-            border-radius: 14px;
-            margin-bottom: 24px;
-            box-shadow: 0 3px 14px rgba(0, 0, 0, .06);
+            padding: 16px;
         }
 
         .cow-form {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
-        }
-
-        .cow-field {
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-        }
-
-        .cow-field input,
-        .cow-field select,
-        .cow-field textarea {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 11px;
-            border: 1px solid #d5ddd7;
-            border-radius: 7px;
-            font: inherit;
-        }
-
-        .cow-field textarea {
-            min-height: 85px;
-            resize: vertical;
+            grid-template-columns: 1fr;
         }
 
         .cow-field.full,
         .cow-form button {
-            grid-column: 1 / -1;
+            grid-column: auto;
         }
+    }
+</style>
 
-        .cow-button {
-            padding: 12px 18px;
-            background: #176b45;
-            color: white;
-            border: 0;
-            border-radius: 7px;
-            cursor: pointer;
-            font-weight: 600;
-        }
 
-        .cow-table-wrap {
-            overflow-x: auto;
-        }
 
-        .cow-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 760px;
-        }
-
-        .cow-table th,
-        .cow-table td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #e6ebe7;
-        }
-
-        .cow-table th {
-            background: #f3f7f4;
-        }
-
-        .cow-status {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 20px;
-            background: #eef2ef;
-            text-transform: capitalize;
-        }
-
-        .cow-status.active,
-        .cow-status.pregnant {
-            background: #e2f5e8;
-            color: #176b45;
-        }
-
-        .cow-status.sick {
-            background: #fff0d8;
-            color: #885600;
-        }
-
-        .cow-status.deceased {
-            background: #fce8e8;
-            color: #9d2525;
-        }
-
-        .cow-alert {
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-        }
-
-        .cow-alert.success {
-            background: #e2f5e8;
-            color: #176b45;
-        }
-
-        .cow-alert.error {
-            background: #fdeaea;
-            color: #9d2525;
-        }
-
-        .cow-muted {
-            color: #68776d;
-        }
-
-        @media (max-width: 650px) {
-            .cow-page {
-                padding: 14px;
-            }
-
-            .cow-card {
-                padding: 16px;
-            }
-
-            .cow-form {
-                grid-template-columns: 1fr;
-            }
-
-            .cow-field.full,
-            .cow-form button {
-                grid-column: auto;
-            }
-        }
-    </style>
 </head>
 
 <body>
     <div class="dashboard-layout">
 
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <h2>DF</h2>
-                <span>DAIRY FARM MANAGEMENT</span>
-            </div>
+         <aside class="sidebar">
+            <a href="index.php" class="brand">
+                <span class="logo small-logo">DF</span>
+                <span>DairyFlow<small>FARM MANAGEMENT</small></span>
+            </a>
 
+            <p class="nav-label">WORKSPACE</p>
             <nav>
                 <a class="active" href="index.php">▦ &nbsp; Dashboard</a>
 
                 <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
                     <a href="cows.php">♧ &nbsp; Cows & Records</a>
                     <a href="milk.php">◉ &nbsp; Milk Production</a>
-                    <a href="search.php">⌕ &nbsp; serch cow</a>
+                    <a href="search.php">⌕ &nbsp; search cow</a>
 
                     <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
                 <?php endif; ?>
 
+
                 <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
                     <a href="feeds.php">🌾 &nbsp; Feed Inventory</a>
+
                 <?php endif; ?>
 
                 <a href="reports.php">▥ &nbsp; Reports</a>
-
                 <?php if ($isSuperAdmin): ?>
                     <a href="users.php">♙ &nbsp; Manage Users</a>
                     <a href="farms.php">⌂ &nbsp; Manage Farms</a>
@@ -542,6 +784,21 @@ function cowStatusClass(string $status): string
                     <a href="users.php">♙ &nbsp; Manage Farm Managers</a>
                 <?php endif; ?>
             </nav>
+
+            <div class="sidebar-bottom">
+                <div class="user-chip">
+                    <div class="avatar"><?= e(strtoupper(substr($_SESSION['full_name'], 0, 1))) ?></div>
+                    <div>
+                        <strong><?= e($_SESSION['full_name']) ?></strong>
+                        <small><?= e(ucwords(str_replace('_', ' ', $role))) ?></small>
+                    </div>
+                </div>
+                <a class="nav-link" href="change_password.php">
+                    <span class="nav-icon">🔐</span>
+                    Change Password
+                </a>
+                <a class="logout" href="logout.php">↪ &nbsp; Sign out</a>
+            </div>
         </aside>
 
         <main class="main-content">

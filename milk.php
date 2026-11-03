@@ -417,421 +417,491 @@ try {
 
     <link rel="stylesheet" href="assets/style.css">
 
-    <style>
-        :root {
-            --navy: #102A43;
-            --navy-light: #183B56;
-            --green: #176B45;
-            --green-light: #228557;
-            --soft-green: #E4F4E9;
-            --mint: #F0F8F2;
-            --lime: #C6E7A8;
-            --border: #E2EAE4;
-            --text: #243B30;
-            --muted: #718078;
-        }
+    
+<style>
+    /* =================================
+       GLOBAL VARIABLES
+    ================================= */
+    :root {
+        --navy: #142D35;
+        --navy-light: #214B48;
+        --green: #176B45;
+        --green-light: #228557;
+        --soft-green: #E2F5E8;
+        --mint: #F4F7F5;
+        --lime: #C5E86C;
+        --border: #E2EAE4;
+        --text: #20372F;
+        --muted: #718078;
+    }
 
-        * {
-            box-sizing: border-box;
-        }
+    * {
+        box-sizing: border-box;
+    }
 
-        body {
-            margin: 0;
-            background: var(--mint);
-            color: var(--text);
-            font-family: Arial, Helvetica, sans-serif;
-        }
+    body {
+        margin: 0;
+        padding: 0;
+        background: var(--mint);
+        color: var(--text);
+        font-family: 'DM Sans', Arial, sans-serif;
+        font-size: 14px;
+    }
 
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    /* =================================
+       DASHBOARD LAYOUT
+    ================================= */
+    .milk-layout {
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+        min-height: 100vh;
+    }
+
+    /* =================================
+       SIDEBAR
+    ================================= */
+    .sidebar {
+        width: 250px;
+        min-width: 250px;
+        min-height: 100vh;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 26px 17px;
+        background: var(--navy);
+        color: #DCE8E3;
+    }
+
+    /* Sidebar branding */
+    .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 0 10px 26px;
+        border-bottom: 1px solid rgba(255,255,255,.12);
+        color: white;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        display: grid;
+        place-items: center;
+        border-radius: 15px;
+        background: var(--lime);
+        color: var(--navy);
+        font-weight: 800;
+        font-size: 16px;
+    }
+
+    .sidebar-brand h2 {
+        font-size: 17px;
+        margin: 0;
+        color: white;
+    }
+
+    .sidebar-brand small {
+        display: block;
+        color: #A9BFBA;
+        margin-top: 4px;
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 1.2px;
+    }
+
+    /* Sidebar navigation */
+    .sidebar nav {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 25px;
+    }
+
+    .sidebar nav a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        color: #B9CBC5;
+        border-radius: 10px;
+        font-size: 12px;
+        transition: background .2s ease, color .2s ease;
+    }
+
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+        background: #214B48;
+        color: white;
+    }
+
+   /* .sidebar nav a.active {
+        box-shadow: inset 3px 0 var(--lime);
+    }*/
+
+    /* Sidebar bottom section */
+    .sidebar-bottom {
+        margin-top: auto;
+        padding-top: 25px;
+    }
+
+    .sidebar-user {
+        border-top: 1px solid rgba(255,255,255,.12);
+        padding: 18px 8px 0;
+        overflow-wrap: anywhere;
+    }
+
+    .sidebar-user strong {
+        display: block;
+        font-size: 13px;
+    }
+
+    .sidebar-user small {
+        display: block;
+        color: #A9BFBA;
+        margin-top: 5px;
+    }
+
+    .sidebar-logout {
+        display: block;
+        color: #FFDADA;
+        text-decoration: none;
+        padding: 12px 8px 0;
+        font-size: 13px;
+    }
+
+    /* =================================
+       MAIN CONTENT
+    ================================= */
+    .milk-main {
+        flex: 1;
+        min-width: 0;
+        padding: 28px;
+        background: var(--mint);
+    }
+
+    .milk-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .milk-topbar h1 {
+        margin: 0 0 8px;
+        color: var(--navy);
+        font-size: 27px;
+    }
+
+    .milk-subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+    }
+
+    /* =================================
+       BUTTONS
+    ================================= */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 0;
+        border-radius: 9px;
+        padding: 11px 16px;
+        background: var(--green);
+        color: #fff;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn:hover {
+        background: var(--green-light);
+    }
+
+    .btn-secondary {
+        background: #fff;
+        color: var(--navy);
+        border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+        background: var(--soft-green);
+    }
+
+    /* =================================
+       MILK STATISTICS
+    ================================= */
+    .milk-stat {
+        padding: 23px;
+        background: linear-gradient(
+            120deg,
+            var(--green),
+            var(--navy)
+        );
+        color: #fff;
+        border-radius: 15px;
+        margin-bottom: 25px;
+    }
+
+    .milk-stat span {
+        color: #E0F0E5;
+        font-size: 14px;
+    }
+
+    .milk-stat strong {
+        display: block;
+        margin-top: 10px;
+        font-size: 32px;
+    }
+
+    /* =================================
+       MILK CARDS
+    ================================= */
+    .milk-card {
+        width: 100%;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 25px;
+        box-shadow: 0 3px 14px rgba(0,0,0,.06);
+    }
+
+    .milk-card h2 {
+        color: var(--navy);
+        font-size: 19px;
+        margin: 0 0 8px;
+    }
+
+    .card-description {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 0 0 22px;
+    }
+
+    /* =================================
+       MILK REGISTRATION FORM
+    ================================= */
+    .milk-form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 19px;
+    }
+
+    .milk-field {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .milk-field.full {
+        grid-column: 1 / -1;
+    }
+
+    .milk-field label {
+        font-weight: 700;
+        color: var(--navy);
+        font-size: 13px;
+    }
+
+    .milk-field input,
+    .milk-field select,
+    .milk-field textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #D5E0D8;
+        border-radius: 8px;
+        background: #fff;
+        color: var(--text);
+        font: inherit;
+        font-size: 14px;
+    }
+
+    .milk-field input:focus,
+    .milk-field select:focus,
+    .milk-field textarea:focus {
+        outline: 2px solid var(--soft-green);
+        border-color: var(--green);
+    }
+
+    .milk-field textarea {
+        resize: vertical;
+    }
+
+    .milk-help {
+        color: var(--muted);
+        font-size: 12px;
+        margin: 0;
+    }
+
+    /* =================================
+       ALERT MESSAGES
+    ================================= */
+    .milk-alert {
+        padding: 14px 16px;
+        border-radius: 9px;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+
+    .milk-alert.error {
+        background: #FFF0F0;
+        border: 1px solid #F3CACA;
+        color: #9D2828;
+    }
+
+    .milk-alert.success {
+        background: var(--soft-green);
+        border: 1px solid #C5E7D0;
+        color: var(--green);
+    }
+
+    /* =================================
+       MILK RECORDS TABLE
+    ================================= */
+    .milk-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .milk-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 720px;
+    }
+
+    .milk-table th {
+        text-align: left;
+        padding: 13px 12px;
+        background: var(--mint);
+        color: var(--navy);
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .milk-table td {
+        padding: 14px 12px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        vertical-align: top;
+    }
+
+    .milk-table tbody tr:hover {
+        background: #FAFCFA;
+    }
+
+    /* =================================
+       SESSION BADGE
+    ================================= */
+    .session-badge {
+        display: inline-block;
+        padding: 5px 9px;
+        border-radius: 20px;
+        background: var(--soft-green);
+        color: var(--green);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 30px 12px;
+        color: var(--muted);
+        font-size: 14px;
+    }
+
+    .milk-mobile-back {
+        display: none;
+    }
+
+    /* =================================
+       TABLET RESPONSIVENESS
+    ================================= */
+    @media (max-width: 850px) {
         .milk-layout {
-            min-height: 100vh;
-            display: flex;
+            display: block;
         }
 
-        /* Sidebar matching the main DairyFlow theme */
         .sidebar {
-            width: 250px;
-            min-width: 250px;
-            background: var(--navy);
-            color: #fff;
-            padding: 26px 18px;
-            display: flex;
-            flex-direction: column;
+            width: 100%;
+            min-width: 0;
+            min-height: auto;
+            padding: 18px;
         }
 
         .sidebar-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0 8px 26px;
-            border-bottom: 1px solid rgba(255, 255, 255, .12);
-        }
-
-        .sidebar-logo {
-            width: 42px;
-            height: 42px;
-            display: grid;
-            place-items: center;
-            border-radius: 12px;
-            background: var(--lime);
-            color: var(--navy);
-            font-weight: 800;
-            font-size: 18px;
-        }
-
-        .sidebar-brand h2 {
-            font-size: 17px;
-            margin: 0;
-        }
-
-        .sidebar-brand small {
-            display: block;
-            color: #C5D5E0;
-            margin-top: 4px;
-            font-size: 11px;
+            padding-bottom: 18px;
         }
 
         .sidebar nav {
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-            margin-top: 25px;
+            flex-direction: row;
+            flex-wrap: wrap;
+            margin-top: 18px;
         }
 
         .sidebar nav a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 13px 14px;
-            color: #DCE8E0;
-            border-radius: 9px;
-            text-decoration: none;
-            font-size: 14px;
-            transition: background .2s ease;
-        }
-
-        .sidebar nav a:hover,
-        .sidebar nav a.active {
-            color: #fff;
-            background: var(--green);
-        }
-
-        .sidebar nav a.active {
-            box-shadow: inset 3px 0 var(--lime);
+            padding: 10px;
+            font-size: 12px;
         }
 
         .sidebar-bottom {
-            margin-top: auto;
-            padding-top: 25px;
+            margin-top: 18px;
+            padding-top: 0;
         }
 
         .sidebar-user {
-            border-top: 1px solid rgba(255, 255, 255, .12);
-            padding: 18px 8px 0;
-            overflow-wrap: anywhere;
-        }
-
-        .sidebar-user strong {
-            display: block;
-            font-size: 13px;
-        }
-
-        .sidebar-user small {
-            display: block;
-            color: #C5D5E0;
-            margin-top: 5px;
-        }
-
-        .sidebar-logout {
-            display: block;
-            color: #FFDADA;
-            text-decoration: none;
-            padding: 12px 8px 0;
-            font-size: 13px;
+            padding-top: 12px;
         }
 
         .milk-main {
-            flex: 1;
-            min-width: 0;
-            padding: 28px;
-        }
-
-        .milk-topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-
-        .milk-topbar h1 {
-            margin: 0 0 8px;
-            color: var(--navy);
-            font-size: 27px;
-        }
-
-        .milk-subtitle {
-            margin: 0;
-            color: var(--muted);
-            font-size: 14px;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            border: 0;
-            border-radius: 9px;
-            padding: 11px 16px;
-            background: var(--green);
-            color: #fff;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .btn:hover {
-            background: var(--green-light);
-        }
-
-        .btn-secondary {
-            background: #fff;
-            color: var(--navy);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--soft-green);
-        }
-
-        .milk-stat {
-            padding: 23px;
-            background: linear-gradient(120deg, var(--green), var(--navy-light));
-            color: #fff;
-            border-radius: 15px;
-            margin-bottom: 25px;
-        }
-
-        .milk-stat span {
-            color: #E0F0E5;
-            font-size: 14px;
-        }
-
-        .milk-stat strong {
-            display: block;
-            margin-top: 10px;
-            font-size: 32px;
-        }
-
-        .milk-card {
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 24px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(16, 42, 67, .04);
-        }
-
-        .milk-card h2 {
-            color: var(--navy);
-            font-size: 19px;
-            margin: 0 0 8px;
-        }
-
-        .card-description {
-            color: var(--muted);
-            font-size: 13px;
-            margin: 0 0 22px;
-        }
-
-        .milk-form {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 19px;
-        }
-
-        .milk-field {
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .milk-field.full {
-            grid-column: 1 / -1;
-        }
-
-        .milk-field label {
-            font-weight: 700;
-            color: var(--navy);
-            font-size: 13px;
-        }
-
-        .milk-field input,
-        .milk-field select,
-        .milk-field textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #D5E0D8;
-            border-radius: 8px;
-            background: #fff;
-            color: var(--text);
-            font: inherit;
-            font-size: 14px;
-        }
-
-        .milk-field input:focus,
-        .milk-field select:focus,
-        .milk-field textarea:focus {
-            outline: 2px solid var(--soft-green);
-            border-color: var(--green);
-        }
-
-        .milk-field textarea {
-            resize: vertical;
-        }
-
-        .milk-help {
-            color: var(--muted);
-            font-size: 12px;
-            margin: 0;
-        }
-
-        .milk-alert {
-            padding: 14px 16px;
-            border-radius: 9px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .milk-alert.error {
-            background: #FFF0F0;
-            border: 1px solid #F3CACA;
-            color: #9D2828;
-        }
-
-        .milk-alert.success {
-            background: var(--soft-green);
-            border: 1px solid #C5E7D0;
-            color: var(--green);
-        }
-
-        .milk-table-wrap {
-            overflow-x: auto;
-        }
-
-        .milk-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 720px;
-        }
-
-        .milk-table th {
-            text-align: left;
-            padding: 13px 12px;
-            background: var(--mint);
-            color: var(--navy);
-            font-size: 12px;
-            white-space: nowrap;
-        }
-
-        .milk-table td {
-            padding: 14px 12px;
-            border-bottom: 1px solid var(--border);
-            font-size: 13px;
-            vertical-align: top;
-        }
-
-        .milk-table tbody tr:hover {
-            background: #FAFCFA;
-        }
-
-        .session-badge {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 20px;
-            background: var(--soft-green);
-            color: var(--green);
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 30px 12px;
-            color: var(--muted);
-            font-size: 14px;
+            padding: 20px 15px;
         }
 
         .milk-mobile-back {
-            display: none;
+            display: inline-flex;
+            margin-bottom: 15px;
+        }
+    }
+
+    /* =================================
+       MOBILE RESPONSIVENESS
+    ================================= */
+    @media (max-width: 580px) {
+        .milk-form {
+            grid-template-columns: 1fr;
         }
 
-        @media (max-width: 850px) {
-            .milk-layout {
-                display: block;
-            }
-
-            .sidebar {
-                width: 100%;
-                min-width: 0;
-                padding: 15px;
-            }
-
-            .sidebar-brand {
-                padding-bottom: 15px;
-            }
-
-            .sidebar nav {
-                flex-direction: row;
-                flex-wrap: wrap;
-                margin-top: 15px;
-            }
-
-            .sidebar nav a {
-                padding: 10px;
-                font-size: 12px;
-            }
-
-            .sidebar-bottom {
-                margin-top: 15px;
-                padding-top: 0;
-            }
-
-            .sidebar-user {
-                padding-top: 12px;
-            }
-
-            .milk-main {
-                padding: 20px 15px;
-            }
-
-            .milk-mobile-back {
-                display: inline-flex;
-                margin-bottom: 15px;
-            }
+        .milk-field.full {
+            grid-column: auto;
         }
 
-        @media (max-width: 580px) {
-            .milk-form {
-                grid-template-columns: 1fr;
-            }
-
-            .milk-field.full {
-                grid-column: auto;
-            }
-
-            .milk-card {
-                padding: 17px;
-            }
-
-            .milk-topbar h1 {
-                font-size: 23px;
-            }
+        .milk-card {
+            padding: 17px;
         }
-    </style>
+
+        .milk-topbar h1 {
+            font-size: 23px;
+        }
+
+        .milk-stat strong {
+            font-size: 27px;
+        }
+    }
+</style>
+
 </head>
 
 <body>
