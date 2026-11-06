@@ -1131,7 +1131,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
                 <a href="cows.php">♧ &nbsp; Cows & Records</a>
                 <a href="milk.php">◉ &nbsp; Milk Production</a>
-                <a href="search.php">🔍 &nbsp; search cow</a>
+                <a href="search.php">🔍 &nbsp; Search cow</a>
 
                 <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
             <?php endif; ?>
