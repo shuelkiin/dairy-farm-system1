@@ -583,7 +583,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+    <link rel="stylesheet" href="assets/style.css">
 
 
     <style>
@@ -1554,27 +1554,6 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
                 padding-right: 12px;
             }
         }
-
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-
-        .top-actions {
-            margin-left: auto;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .farm-select {
-            width: 155px;
-            min-width: 155px;
-        }
     </style>
 
 
@@ -1596,7 +1575,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
                 <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
                     <a href="cows.php">♧ &nbsp; Cows & Records</a>
                     <a href="milk.php">◉ &nbsp; Milk Production</a>
-                    <a href="search.php">⌕ &nbsp; serch cow</a>
+                    <a href="search.php">⌕ &nbsp; search cow</a>
 
                     <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
                 <?php endif; ?>
