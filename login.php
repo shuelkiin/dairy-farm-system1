@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/auth.php';
 
 if (!empty($_SESSION['user_id'])) {
@@ -50,7 +51,230 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login | DairyFlow</title>
-    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        /* =========================================
+   DAIRYFLOW LOGIN PAGE
+   ========================================= */
+
+        :root {
+            --navy: #102a25;
+            --navy-light: #183b33;
+            --green: #23865b;
+            --green-dark: #176b46;
+            --mint: #e9f7ef;
+            --bg: #f5f8f6;
+            --text: #1c3029;
+            --muted: #718078;
+            --border: #dce7e0;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body.login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 25px;
+            background:
+                radial-gradient(circle at top left, #d9f0e2 0%, transparent 38%),
+                radial-gradient(circle at bottom right, #dceee4 0%, transparent 35%),
+                var(--bg);
+            font-family: 'DM Sans', 'Segoe UI', sans-serif;
+            color: var(--text);
+        }
+
+        /* Login Card */
+
+        .login-card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--white);
+            padding: 45px 40px;
+            border-radius: 18px;
+            border: 1px solid rgba(35, 134, 91, 0.1);
+            box-shadow: 0 20px 60px rgba(16, 42, 37, 0.09);
+            animation: fadeIn 0.6s ease;
+        }
+
+        /* Logo */
+
+        .logo {
+            width: 58px;
+            height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--navy);
+            color: var(--white);
+            border-radius: 14px;
+            font-size: 21px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 28px;
+            box-shadow: 0 7px 18px rgba(16, 42, 37, 0.18);
+        }
+
+        /* Headings */
+
+        .eyebrow {
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        .login-card h1 {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--navy);
+            letter-spacing: -1px;
+            margin-bottom: 10px;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        /* Form */
+
+        .form {
+            display: flex;
+            flex-direction: column;
+            margin-top: 32px;
+        }
+
+        .form label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 9px;
+        }
+
+        .form input {
+            width: 100%;
+            height: 49px;
+            padding: 0 15px;
+            margin-bottom: 22px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: #fbfdfb;
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+            transition: 0.25s ease;
+        }
+
+        .form input::placeholder {
+            color: #a5b1aa;
+        }
+
+        .form input:focus {
+            border-color: var(--green);
+            background: var(--white);
+            box-shadow: 0 0 0 4px rgba(35, 134, 91, 0.10);
+        }
+
+        /* Login Button */
+
+        .btn {
+            width: 100%;
+            height: 51px;
+            border: none;
+            border-radius: 9px;
+            background: var(--green);
+            color: var(--white);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: 0.25s ease;
+        }
+
+        .btn span {
+            font-size: 20px;
+            transition: transform 0.25s ease;
+        }
+
+        .btn:hover {
+            background: var(--green-dark);
+            box-shadow: 0 8px 20px rgba(35, 134, 91, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn:hover span {
+            transform: translateX(4px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Error Message */
+
+        .error {
+            background: #fff0f0;
+            color: #b42318;
+            border: 1px solid #f5c6c6;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 13px;
+            margin-top: 22px;
+            line-height: 1.5;
+        }
+
+        /* Security Note */
+
+        .secure-note {
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid #edf1ee;
+        }
+
+        /* Animation */
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive Design */
+
+        @media (max-width: 480px) {
+            body.login-page {
+                padding: 16px;
+            }
+
+            .login-card {
+                padding: 32px 24px;
+            }
+
+            .login-card h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
 </head>
 
 <body class="login-page">

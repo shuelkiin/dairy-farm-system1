@@ -80,6 +80,7 @@ try {
             http_response_code(403);
             exit('You are not permitted to register cows.');
         }
+
         if (
             !isset($_POST['csrf_token']) ||
             !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])
@@ -88,6 +89,83 @@ try {
                 'Invalid form session. Refresh the page and try again.'
             );
         }
+
+        // UPDATE EXISTING COW STATUS
+        if (($_POST['action'] ?? '') === 'update_cow_status') {
+
+            $cowId = filter_var(
+                $_POST['cow_id'] ?? null,
+                FILTER_VALIDATE_INT
+            );
+
+            $newStatus = $_POST['status'] ?? '';
+
+            if (!$cowId || $cowId < 1) {
+                throw new RuntimeException('Invalid cow selected.');
+            }
+
+            if (!in_array($newStatus, $allowedStatuses, true)) {
+                throw new RuntimeException('Invalid cow status.');
+            }
+
+            // Build the update according to the logged-in user's permissions.
+            if ($isSuperAdmin) {
+
+                $updateStmt = $pdo->prepare(
+                    'UPDATE cows SET status = ? WHERE cow_id = ?'
+                );
+
+                $updateStmt->execute([$newStatus, $cowId]);
+            } elseif ($role === 'admin') {
+
+                $updateStmt = $pdo->prepare(
+                    'UPDATE cows SET status = ?
+             WHERE cow_id = ? AND farm_id = ?'
+                );
+
+                $updateStmt->execute([
+                    $newStatus,
+                    $cowId,
+                    $userFarmId
+                ]);
+            } else {
+
+                $updateStmt = $pdo->prepare(
+                    'UPDATE cows SET status = ?
+             WHERE cow_id = ?
+             AND farm_id = ?
+             AND manager_id = ?'
+                );
+
+                $updateStmt->execute([
+                    $newStatus,
+                    $cowId,
+                    $userFarmId,
+                    $_SESSION['user_id']
+                ]);
+            }
+
+            // Refresh the security token.
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+            // Preserve the selected farm for Super Admin.
+            $redirectUrl = 'cows.php?status_updated=1';
+
+            if ($isSuperAdmin && !empty($_POST['return_farm_id'])) {
+                $returnFarmId = filter_var(
+                    $_POST['return_farm_id'],
+                    FILTER_VALIDATE_INT
+                );
+
+                if ($returnFarmId && $returnFarmId > 0) {
+                    $redirectUrl .= '&farm_id=' . $returnFarmId;
+                }
+            }
+
+            header('Location: ' . $redirectUrl);
+            exit;
+        }
+
 
         $farmId = $isSuperAdmin
             ? filter_var($_POST['farm_id'] ?? '', FILTER_VALIDATE_INT)
@@ -269,9 +347,13 @@ try {
         }
     }
 
-    // Display the success message after redirecting.
+    // Display success messages after redirecting.
     if (isset($_GET['created'])) {
         $success = 'Cow registered successfully.';
+    }
+
+    if (isset($_GET['status_updated'])) {
+        $success = 'Cow status updated successfully.';
     }
 
 
@@ -669,6 +751,122 @@ function cowStatusClass(string $status): string
                 font-size: 22px;
             }
         }
+
+        /* Editable Cow Status Dropdown */
+        .cow-status-form {
+            margin: 0;
+        }
+
+        .cow-status-select {
+            min-width: 115px;
+            padding: 7px 28px 7px 11px;
+            border: 1px solid #dce8df;
+            border-radius: 20px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: capitalize;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .cow-status-select:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(35, 134, 91, 0.12);
+        }
+
+        .cow-status-select.active,
+        .cow-status-select.pregnant {
+            background: #e2f5e8;
+            color: #176b45;
+        }
+
+        .cow-status-select.sick {
+            background: #fff0d8;
+            color: #885600;
+        }
+
+        .cow-status-select.deceased {
+            background: #fce8e8;
+            color: #9d2525;
+        }
+
+        .cow-status-select.sold {
+            background: #e8eaf6;
+            color: #3949ab;
+        }
+
+        .cow-status-select.dry {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+
+        /* COW SEARCH SECTION */
+
+        .cow-search-section {
+            margin: 20px 0 22px;
+        }
+
+        .cow-search-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 0 14px;
+            background: #ffffff;
+            border: 1px solid #dce8df;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .cow-search-box:focus-within {
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(35, 134, 91, 0.10);
+        }
+
+        .search-icon {
+            font-size: 23px;
+            color: var(--green);
+        }
+
+        .cow-search-box input {
+            flex: 1;
+            min-width: 0;
+            padding: 14px 0;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--ink);
+            font-family: inherit;
+            font-size: 13px;
+        }
+
+        .cow-search-box input::placeholder {
+            color: #9aa9a0;
+        }
+
+        .clear-search {
+            padding: 7px 12px;
+            border: none;
+            border-radius: 6px;
+            background: var(--mint);
+            color: var(--green-dark);
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .clear-search:hover {
+            background: #d7efdf;
+        }
+
+        .search-results {
+            margin-top: 9px;
+            font-size: 12px;
+        }
     </style>
 
 
@@ -949,8 +1147,30 @@ function cowStatusClass(string $status): string
                     <h2>Registered Cows</h2>
 
                     <p class="cow-muted">
-                        Total records: <?= count($cows) ?>
+                        Total records: <span id="total-cows"><?= count($cows) ?></span>
                     </p>
+
+                    <!-- COW SEARCH -->
+                    <div class="cow-search-section">
+                        <div class="cow-search-box">
+                            <span class="search-icon">⌕</span>
+
+                            <input
+                                type="search"
+                                id="cowSearch"
+                                placeholder="Search by tag number, name, farm, breed, gender or status..."
+                                autocomplete="off"
+                                aria-label="Search registered cows">
+
+                            <button type="button" id="clearCowSearch" class="clear-search">
+                                Clear
+                            </button>
+                        </div>
+
+                        <p class="cow-muted search-results" id="searchResults">
+                            Showing all <?= count($cows) ?> cows
+                        </p>
+                    </div>
 
                     <div class="cow-table-wrap">
                         <table class="cow-table">
@@ -1001,9 +1221,47 @@ function cowStatusClass(string $status): string
                                             </td>
 
                                             <td>
-                                                <span class="cow-status <?= e(cowStatusClass($cow['status'])) ?>">
-                                                    <?= e($cow['status']) ?>
-                                                </span>
+                                                <form method="POST" action="cows.php" class="cow-status-form">
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="csrf_token"
+                                                        value="<?= e($_SESSION['csrf_token']) ?>">
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="action"
+                                                        value="update_cow_status">
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="cow_id"
+                                                        value="<?= (int) $cow['cow_id'] ?>">
+
+                                                    <?php if ($isSuperAdmin && !empty($farmId)): ?>
+                                                        <input
+                                                            type="hidden"
+                                                            name="return_farm_id"
+                                                            value="<?= (int) $farmId ?>">
+                                                    <?php endif; ?>
+
+                                                    <select
+                                                        name="status"
+                                                        class="cow-status-select <?= e(cowStatusClass($cow['status'])) ?>"
+                                                        onchange="this.form.submit()"
+                                                        aria-label="Change status for <?= e($cow['tag_number']) ?>">
+
+                                                        <?php foreach ($allowedStatuses as $option): ?>
+                                                            <option
+                                                                value="<?= e($option) ?>"
+                                                                <?= $cow['status'] === $option ? 'selected' : '' ?>>
+                                                                <?= e(ucfirst($option)) ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+
+                                                    </select>
+
+                                                </form>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -1082,6 +1340,52 @@ function cowStatusClass(string $status): string
 
                         updateMotherOptions();
                         updateMotherField();
+
+                        // LIVE COW SEARCH
+                        const cowSearch = document.getElementById('cowSearch');
+                        const clearCowSearch = document.getElementById('clearCowSearch');
+                        const searchResults = document.getElementById('searchResults');
+                        const cowRows = Array.from(
+                            document.querySelectorAll('.cow-table tbody tr')
+                        );
+
+                        const totalCows = <?= count($cows) ?>;
+
+                        function searchCows() {
+                            const searchValue = cowSearch.value.trim().toLowerCase();
+
+                            let visibleCount = 0;
+
+                            cowRows.forEach(function(row) {
+                                // Ignore the empty-table message.
+                                if (row.cells.length === 1) {
+                                    return;
+                                }
+
+                                const rowText = row.textContent.toLowerCase();
+
+                                const matches = rowText.includes(searchValue);
+
+                                row.style.display = matches ? '' : 'none';
+
+                                if (matches) {
+                                    visibleCount++;
+                                }
+                            });
+
+                            searchResults.textContent = searchValue === '' ?
+                                `Showing all ${totalCows} cows` :
+                                `Found ${visibleCount} of ${totalCows} cows`;
+                        }
+
+                        cowSearch.addEventListener('input', searchCows);
+
+                        clearCowSearch.addEventListener('click', function() {
+                            cowSearch.value = '';
+                            searchCows();
+                            cowSearch.focus();
+                        });
+
                     });
                 </script>
             </div>

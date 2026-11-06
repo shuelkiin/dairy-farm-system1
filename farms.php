@@ -15,7 +15,7 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// Register a new farm
+// Handle farm registration and status updates
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $submittedToken = $_POST['csrf_token'] ?? '';
@@ -29,51 +29,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
         }
 
-        $farmName = trim($_POST['farm_name'] ?? '');
-        $location = trim($_POST['location'] ?? '');
-        $phone = trim($_POST['contact_phone'] ?? '');
+        // UPDATE FARM STATUS
+        if (($_POST['action'] ?? '') === 'update_farm_status') {
 
-        if ($farmName === '') {
-            throw new RuntimeException('Farm name is required.');
-        }
-
-        if (strlen($farmName) > 150) {
-            throw new RuntimeException(
-                'Farm name must not exceed 150 characters.'
+            $farmId = filter_var(
+                $_POST['farm_id'] ?? null,
+                FILTER_VALIDATE_INT
             );
-        }
 
-        if (strlen($location) > 255 || strlen($phone) > 30) {
-            throw new RuntimeException(
-                'Location or phone number is too long.'
+            $newStatus = $_POST['status'] ?? '';
+
+            if (!$farmId || $farmId < 1) {
+                throw new RuntimeException('Invalid farm selected.');
+            }
+
+            if (!in_array($newStatus, ['active', 'inactive'], true)) {
+                throw new RuntimeException('Invalid farm status.');
+            }
+
+            $stmt = $pdo->prepare(
+                'UPDATE farms SET status = :status WHERE farm_id = :farm_id'
             );
+
+            $stmt->execute([
+                'status' => $newStatus,
+                'farm_id' => $farmId
+            ]);
+
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+            $message = 'Farm status updated successfully!';
+        } else {
+
+            // REGISTER A NEW FARM
+            $farmName = trim($_POST['farm_name'] ?? '');
+            $location = trim($_POST['location'] ?? '');
+            $phone = trim($_POST['contact_phone'] ?? '');
+
+            if ($farmName === '') {
+                throw new RuntimeException('Farm name is required.');
+            }
+
+            if (strlen($farmName) > 150) {
+                throw new RuntimeException(
+                    'Farm name must not exceed 150 characters.'
+                );
+            }
+
+            if (strlen($location) > 255 || strlen($phone) > 30) {
+                throw new RuntimeException(
+                    'Location or phone number is too long.'
+                );
+            }
+
+            $stmt = $pdo->prepare(
+                'INSERT INTO farms
+                    (farm_name, location, contact_phone, status)
+                 VALUES
+                    (:farm_name, :location, :contact_phone, :status)'
+            );
+
+            $stmt->execute([
+                'farm_name' => $farmName,
+                'location' => $location !== '' ? $location : null,
+                'contact_phone' => $phone !== '' ? $phone : null,
+                'status' => 'active'
+            ]);
+
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+            $message = 'Farm registered successfully!';
         }
-
-        $stmt = $pdo->prepare(
-            'INSERT INTO farms
-                (farm_name, location, contact_phone, status)
-             VALUES
-                (:farm_name, :location, :contact_phone, :status)'
-        );
-
-        $stmt->execute([
-            'farm_name' => $farmName,
-            'location' => $location !== '' ? $location : null,
-            'contact_phone' => $phone !== '' ? $phone : null,
-            'status' => 'active'
-        ]);
-
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        $message = 'Farm registered successfully!';
     } catch (RuntimeException $exception) {
         $error = $exception->getMessage();
     } catch (PDOException $exception) {
-        error_log('Farm registration error: ' . $exception->getMessage());
+        error_log('Farm operation error: ' . $exception->getMessage());
 
         if ($exception->getCode() === '23000') {
             $error = 'A farm with these details may already exist.';
         } else {
-            $error = 'Could not register the farm. Check the database table structure.';
+            $error = 'Could not complete the farm operation.';
         }
     }
 }
@@ -580,6 +613,37 @@ try {
                 padding: 16px 12px;
             }
         }
+
+
+
+
+        .status-form {
+            margin: 0;
+        }
+
+        .status-select {
+            min-width: 115px;
+            padding: 7px 30px 7px 12px;
+            border: 1px solid #c8ead5;
+            border-radius: 20px;
+            background: #e7f7ed;
+            color: #176b46;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .status-select:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(35, 134, 91, 0.12);
+        }
+
+        .status-select option {
+            background: white;
+            color: var(--text);
+        }
     </style>
 
 
@@ -745,9 +809,40 @@ try {
                                             <td><?= e($farm['location'] ?? 'Not provided') ?></td>
                                             <td><?= e($farm['contact_phone'] ?? 'Not provided') ?></td>
                                             <td>
-                                                <span class="status">
-                                                    <?= e(ucfirst($farm['status'] ?? 'Unknown')) ?>
-                                                </span>
+                                                <form method="POST" action="farms.php" class="status-form">
+                                                    <input
+                                                        type="hidden"
+                                                        name="csrf_token"
+                                                        value="<?= e($_SESSION['csrf_token']) ?>">
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="action"
+                                                        value="update_farm_status">
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="farm_id"
+                                                        value="<?= e((string)$farm['farm_id']) ?>">
+
+                                                    <select
+                                                        name="status"
+                                                        class="status-select"
+                                                        onchange="this.form.submit()"
+                                                        aria-label="Change status for <?= e($farm['farm_name']) ?>">
+
+                                                        <option value="active"
+                                                            <?= ($farm['status'] ?? '') === 'active' ? 'selected' : '' ?>>
+                                                            Active
+                                                        </option>
+
+                                                        <option value="inactive"
+                                                            <?= ($farm['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>
+                                                            Inactive
+                                                        </option>
+
+                                                    </select>
+                                                </form>
                                             </td>
                                             <td><?= e($farm['created_at'] ?? '') ?></td>
                                         </tr>

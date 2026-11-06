@@ -31,37 +31,43 @@ if ($isSuperAdmin) {
     ")->fetchColumn();
 
     $farms = $pdo->query("
-        SELECT f.farm_id, f.farm_name,
-               COUNT(DISTINCT c.cow_id) AS cow_count,
-               COALESCE((
-                   SELECT SUM(mp.quantity_litres)
-                   FROM milk_production mp
-                   WHERE mp.farm_id = f.farm_id
-                   AND mp.production_date = CURDATE()
-               ), 0) AS milk_today
-        FROM farms f
-        LEFT JOIN cows c ON c.farm_id = f.farm_id
-        GROUP BY f.farm_id, f.farm_name
-        ORDER BY f.farm_name
-    ")->fetchAll();
+    SELECT f.farm_id,
+           f.farm_name,
+           f.status,
+           COUNT(DISTINCT c.cow_id) AS cow_count,
+           COALESCE((
+               SELECT SUM(mp.quantity_litres)
+               FROM milk_production mp
+               WHERE mp.farm_id = f.farm_id
+               AND mp.production_date = CURDATE()
+           ), 0) AS milk_today
+    FROM farms f
+    LEFT JOIN cows c ON c.farm_id = f.farm_id
+    GROUP BY f.farm_id, f.farm_name, f.status
+    ORDER BY f.farm_name
+")->fetchAll();
 } elseif ($role === 'farm_manager') {
+
     $farmCount = $farmId ? 1 : 0;
     $managerId = (int) $_SESSION['user_id'];
 
-    // Total cows assigned to this manager.
+    // 1. Total cows assigned to this manager.
     $stmt = $pdo->prepare("
         SELECT COUNT(*)
         FROM cows
         WHERE farm_id = :farm
           AND manager_id = :manager
     ");
+
     $stmt->execute([
         'farm' => $farmId ?: 0,
         'manager' => $managerId
     ]);
+
     $cowCount = (int) $stmt->fetchColumn();
 
-    // Today's milk from this manager's cows.
+
+    // 2. Today's milk from this manager's cows.
     $stmt = $pdo->prepare("
         SELECT COALESCE(SUM(mp.quantity_litres), 0)
         FROM milk_production mp
@@ -70,13 +76,16 @@ if ($isSuperAdmin) {
           AND c.manager_id = :manager
           AND mp.production_date = CURDATE()
     ");
+
     $stmt->execute([
         'farm' => $farmId ?: 0,
         'manager' => $managerId
     ]);
+
     $milkToday = (float) $stmt->fetchColumn();
 
-    // Health records for this manager's cows.
+
+    // 3. Active health cases belonging to this manager's cows.
     $stmt = $pdo->prepare("
         SELECT COUNT(*)
         FROM health_records hr
@@ -85,32 +94,46 @@ if ($isSuperAdmin) {
           AND c.manager_id = :manager
           AND hr.status IN ('ongoing', 'under_treatment')
     ");
+
     $stmt->execute([
         'farm' => $farmId ?: 0,
         'manager' => $managerId
     ]);
+
     $healthCount = (int) $stmt->fetchColumn();
 
-    // Farm card, showing only this manager's cows and milk.
 
-    $stmt = $pdo->prepare("
-    SELECT f.farm_id, f.farm_name,
-           COUNT(DISTINCT c.cow_id) AS cow_count,
-           COALESCE((
-               SELECT SUM(mp.quantity_litres)
-               FROM milk_production mp
-               INNER JOIN cows mc ON mc.cow_id = mp.cow_id
-               WHERE mp.farm_id = f.farm_id
-                 AND mc.manager_id = :manager_milk
-                 AND mp.production_date = CURDATE()
-           ), 0) AS milk_today
-    FROM farms f
-    LEFT JOIN cows c
-      ON c.farm_id = f.farm_id
-     AND c.manager_id = :manager_cows
-    WHERE f.farm_id = :farm
-    GROUP BY f.farm_id, f.farm_name
-");
+    // 4. Farm overview: only this manager's assigned cows.
+    $farmSql = "
+        SELECT
+            f.farm_id,
+            f.farm_name,
+            f.status,
+
+            COUNT(DISTINCT c.cow_id) AS cow_count,
+
+            COALESCE((
+                SELECT SUM(mp.quantity_litres)
+                FROM milk_production mp
+                INNER JOIN cows mc ON mc.cow_id = mp.cow_id
+                WHERE mp.farm_id = f.farm_id
+                  AND mc.manager_id = :manager_milk
+                  AND mp.production_date = CURDATE()
+            ), 0) AS milk_today
+
+        FROM farms f
+
+        LEFT JOIN cows c
+            ON c.farm_id = f.farm_id
+            AND c.manager_id = :manager_cows
+
+        WHERE f.farm_id = :farm
+
+        GROUP BY f.farm_id, f.farm_name, f.status
+        ORDER BY f.farm_name
+    ";
+
+    $stmt = $pdo->prepare($farmSql);
 
     $stmt->execute([
         'manager_milk' => $managerId,
@@ -147,7 +170,7 @@ if ($isSuperAdmin) {
     $healthCount = (int)$stmt->fetchColumn();
 
     $stmt = $pdo->prepare("
-        SELECT f.farm_id, f.farm_name,
+       SELECT f.farm_id, f.farm_name, f.status,
                COUNT(DISTINCT c.cow_id) AS cow_count,
                COALESCE((
                    SELECT SUM(mp.quantity_litres)
@@ -158,7 +181,7 @@ if ($isSuperAdmin) {
         FROM farms f
         LEFT JOIN cows c ON c.farm_id = f.farm_id
         WHERE f.farm_id = :farm
-        GROUP BY f.farm_id, f.farm_name
+       GROUP BY f.farm_id, f.farm_name, f.status
     ");
     $stmt->execute(['farm' => $farmId ?: 0]);
     $farms = $stmt->fetchAll();
@@ -202,7 +225,6 @@ if ($isSuperAdmin) {
         'manager' => (int) $_SESSION['user_id']
     ]);
 } else {
-    // Admin continues to see all milk records for their farm.
     $milkSql = "
         SELECT mp.*, f.farm_name, c.tag_number, c.cow_name
         FROM milk_production mp
@@ -214,7 +236,9 @@ if ($isSuperAdmin) {
     ";
 
     $stmt = $pdo->prepare($milkSql);
-    $stmt->execute(['farm' => $farmId ?: 0]);
+    $stmt->execute([
+        'farm' => $farmId ?: 0
+    ]);
 }
 
 $recentMilk = $stmt->fetchAll();
@@ -875,6 +899,12 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
             color: var(--green-dark);
         }
 
+        .pill-red {
+            background: #fbeaea;
+            color: #e74c3c;
+        }
+
+
         /* =========================================
    QUICK ACTIONS
 ========================================= */
@@ -1214,12 +1244,35 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
                                         </thead>
                                         <tbody>
                                             <?php foreach ($farms as $farm): ?>
+
+                                                <?php
+                                                $status = strtolower(trim($farm['status'] ?? 'inactive'));
+
+                                                $statusClass = $status === 'active'
+                                                    ? 'pill-green'
+                                                    : 'pill-red';
+                                                ?>
+
                                                 <tr>
-                                                    <td><strong><?= e($farm['farm_name']) ?></strong></td>
-                                                    <td><?= number_format((int)$farm['cow_count']) ?></td>
-                                                    <td><?= number_format((float)$farm['milk_today'], 1) ?> L</td>
-                                                    <td><span class="pill pill-green">Active</span></td>
+                                                    <td>
+                                                        <strong><?= e($farm['farm_name']) ?></strong>
+                                                    </td>
+
+                                                    <td>
+                                                        <?= number_format((int)$farm['cow_count']) ?>
+                                                    </td>
+
+                                                    <td>
+                                                        <?= number_format((float)$farm['milk_today'], 1) ?> L
+                                                    </td>
+
+                                                    <td>
+                                                        <span class="pill <?= $statusClass ?>">
+                                                            <?= e(ucfirst($status)) ?>
+                                                        </span>
+                                                    </td>
                                                 </tr>
+
                                             <?php endforeach; ?>
                                         </tbody>
                                     </table>
