@@ -1418,6 +1418,138 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
                 flex-direction: column;
             }
         }
+
+
+
+        /* =====================================
+   HEALTH DASHBOARD STATISTICS
+===================================== */
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 20px;
+            margin: 25px 0 30px;
+        }
+
+        .stat {
+            position: relative;
+            background: #ffffff;
+            border: 1px solid #e5ebe7;
+            border-radius: 15px;
+            padding: 23px 22px;
+            min-height: 145px;
+            box-shadow: 0 5px 18px rgba(16, 42, 37, 0.035);
+            overflow: hidden;
+            transition: all 0.25s ease;
+        }
+
+        .stat:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(16, 42, 37, 0.08);
+            border-color: #c9e5d5;
+        }
+
+        .stat h3 {
+            color: #788b81;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            margin-bottom: 18px;
+        }
+
+        .stat strong {
+            display: block;
+            color: #102a25;
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: -1.2px;
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+
+        .stat small {
+            display: block;
+            color: #788b81;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        /* Individual statistic accents */
+
+        .stat:nth-child(1) {
+            border-top: 3px solid #23865b;
+        }
+
+        .stat:nth-child(2) {
+            border-top: 3px solid #d49a27;
+        }
+
+        .stat:nth-child(3) {
+            border-top: 3px solid #3984c6;
+        }
+
+        .stat:nth-child(4) {
+            border-top: 3px solid #9b72c5;
+        }
+
+        /* Optional icon styling if your HTML has .stat-icon */
+
+        .stat-icon {
+            position: absolute;
+            top: 19px;
+            right: 19px;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 11px;
+            background: #e9f7ef;
+            color: #23865b;
+            font-size: 19px;
+        }
+
+        .stat:nth-child(2) .stat-icon {
+            background: #fff6df;
+            color: #b98217;
+        }
+
+        .stat:nth-child(3) .stat-icon {
+            background: #eaf2ff;
+            color: #3984c6;
+        }
+
+        .stat:nth-child(4) .stat-icon {
+            background: #f3edfa;
+            color: #9b72c5;
+        }
+
+        /* Responsive statistics */
+
+        @media (max-width: 1100px) {
+            .stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .stats {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .stat {
+                min-height: 125px;
+                padding: 20px;
+            }
+
+            .stat strong {
+                font-size: 29px;
+            }
+        }
     </style>
 
 </head>
