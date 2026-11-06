@@ -1,8 +1,12 @@
 <?php
+require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/auth.php';
 
 requireLogin();
 requireRole(['super_admin']);
+$currentRole = $_SESSION['role_name'] ?? '';
+$isSuperAdmin = ($currentRole === 'super_admin');
+$role = $currentRole;
 
 $message = '';
 $error = '';
@@ -98,269 +102,663 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Manage Farms | Dairy Farm System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+
 
     <style>
+        :root {
+            --navy: #102a25;
+            --navy-light: #183b33;
+            --green: #23865b;
+            --green-dark: #176b46;
+            --mint: #e9f7ef;
+            --bg: #f5f8f6;
+            --text: #1c3029;
+            --muted: #788b81;
+            --line: #e5ebe7;
+            --white: #ffffff;
+            --shadow: 0 12px 32px rgba(16, 42, 37, 0.055);
+        }
+
         * {
             box-sizing: border-box;
         }
 
+        html {
+            min-height: 100%;
+        }
+
         body {
             margin: 0;
-            padding: 30px;
-            font-family: Arial, sans-serif;
-            background: #f3f7f2;
-            color: #19342a;
+            min-height: 100vh;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
         }
 
-        .container {
-            max-width: 1150px;
-            margin: auto;
+        /* APPLICATION LAYOUT */
+
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
         }
+
+        /* SIDEBAR */
+
+        .sidebar {
+            width: 248px;
+            min-width: 248px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            padding: 27px 17px;
+            display: flex;
+            flex-direction: column;
+            background: var(--navy);
+            color: white;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 5px 42px;
+            color: white;
+            text-decoration: none;
+            font-size: 19px;
+            font-weight: 800;
+        }
+
+        .brand small {
+            display: block;
+            margin-top: 3px;
+            color: #9eb9aa;
+            font-size: 9px;
+            letter-spacing: 1.5px;
+        }
+
+        .logo {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: var(--green);
+            color: white;
+            font-weight: 800;
+        }
+
+        .nav-label {
+            margin: 0 10px 13px;
+            color: #78988a;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.7px;
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sidebar nav a {
+            display: flex;
+            align-items: center;
+            padding: 12px 13px;
+            border-radius: 9px;
+            color: #c2d3ca;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .sidebar nav a:hover {
+            background: var(--navy-light);
+            color: white;
+        }
+
+        .sidebar nav a.active {
+            background: var(--green);
+            color: white;
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding-top: 17px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            padding: 8px 5px 15px;
+        }
+
+        .avatar {
+            width: 35px;
+            height: 35px;
+            flex-shrink: 0;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: #d7f1e1;
+            color: var(--green-dark);
+            font-weight: 800;
+        }
+
+        .user-chip strong {
+            display: block;
+            color: white;
+            font-size: 12px;
+        }
+
+        .user-chip small {
+            display: block;
+            margin-top: 4px;
+            color: #9eb9aa;
+            font-size: 10px;
+        }
+
+        .sidebar-bottom a {
+            display: block;
+            padding: 12px 13px;
+            border-radius: 9px;
+            color: #c2d3ca;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .sidebar-bottom a:hover {
+            background: var(--navy-light);
+            color: white;
+        }
+
+        .sidebar-bottom .logout {
+            color: #f0a6a6;
+        }
+
+        /* MAIN AREA */
+
+        .main-area {
+            width: calc(100% - 248px);
+            min-width: 0;
+            min-height: 100vh;
+            margin-left: 248px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* PAGE HEADER */
 
         .header {
-            background: #173d2b;
-            color: white;
-            padding: 26px;
-            border-radius: 12px;
-            margin-bottom: 24px;
+            width: 100%;
+            min-height: 105px;
+            padding: 23px 36px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .header h1 {
+            margin: 0;
+            color: var(--navy);
+            font-family: 'Manrope', sans-serif;
+            font-size: 25px;
+            font-weight: 800;
         }
 
         .header p {
-            color: #dce9df;
+            margin: 7px 0 0;
+            color: var(--muted);
+            font-size: 13px;
         }
 
-        .panel {
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        .eyebrow {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--green);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
         }
+
+        /* PAGE CONTENT */
+
+        .content {
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px 36px 40px;
+        }
+
+        /* PANELS */
+
+        .panel {
+            width: 100%;
+            padding: 26px;
+            margin-bottom: 24px;
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel h2 {
+            margin: 0 0 23px;
+            color: var(--navy);
+            font-family: 'Manrope', sans-serif;
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        /* FORM */
 
         .form-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 18px;
+            gap: 20px;
         }
 
         .field {
-            margin-bottom: 8px;
+            min-width: 0;
+            margin-bottom: 3px;
         }
 
         label {
             display: block;
-            margin-bottom: 7px;
-            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 700;
         }
 
         input {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ccd8ce;
-            border-radius: 7px;
-            font-size: 15px;
+            min-height: 44px;
+            padding: 12px 14px;
+            border: 1px solid #dce6df;
+            border-radius: 8px;
+            outline: none;
+            background: white;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+
+        input::placeholder {
+            color: #a4b2aa;
         }
 
         input:focus {
-            outline: 2px solid #83bd91;
-            border-color: #287447;
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(35, 134, 91, 0.1);
         }
 
-        button,
-        .back {
-            display: inline-block;
+        /* SUBMIT BUTTON */
+
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 43px;
+            margin-top: 22px;
+            padding: 12px 22px;
             border: none;
-            border-radius: 7px;
-            padding: 12px 18px;
+            border-radius: 8px;
+            background: var(--green);
             color: white;
-            background: #287447;
-            font-weight: bold;
-            text-decoration: none;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
             cursor: pointer;
-        }
-
-        .back {
-            background: #31516b;
-            margin-top: 8px;
+            transition: 0.2s;
         }
 
         button:hover {
-            background: #1c5b35;
+            background: var(--green-dark);
+            transform: translateY(-1px);
         }
 
+        /* NOTIFICATIONS */
+
         .notice {
-            padding: 13px;
-            border-radius: 7px;
-            margin-bottom: 16px;
+            padding: 14px 16px;
+            margin-bottom: 19px;
+            border-radius: 8px;
+            font-size: 13px;
         }
 
         .success {
-            background: #e1f5e5;
-            color: #17612d;
+            background: #e7f7ed;
+            border: 1px solid #c8ead5;
+            color: #176b46;
         }
 
         .error {
-            background: #ffebeb;
-            color: #9d2020;
+            background: #fff0f0;
+            border: 1px solid #f5d1d1;
+            color: #a52b2b;
         }
 
+        /* FARMS TABLE */
+
         .table-wrap {
+            width: 100%;
             overflow-x: auto;
+            border-radius: 8px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            white-space: nowrap;
         }
 
-        th,
-        td {
+        thead th {
+            padding: 15px 14px;
+            background: #f5f8f6;
+            color: #708279;
             text-align: left;
-            padding: 13px;
-            border-bottom: 1px solid #e4ebe5;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border-bottom: 1px solid var(--line);
         }
 
-        th {
-            background: #edf4ed;
+        tbody td {
+            padding: 15px 14px;
+            color: #40564b;
+            font-size: 12px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f8fbf9;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
         }
 
         .status {
             display: inline-block;
-            padding: 5px 9px;
+            padding: 5px 11px;
             border-radius: 20px;
-            background: #e1f5e5;
-            color: #17612d;
-            font-size: 12px;
-            font-weight: bold;
+            background: #e7f7ed;
+            color: #176b46;
+            font-size: 11px;
+            font-weight: 700;
         }
 
-        @media (max-width: 650px) {
-            body {
-                padding: 14px;
+        /* RESPONSIVE */
+
+        @media (max-width: 1000px) {
+            .content {
+                padding: 25px 22px;
             }
 
+            .header {
+                padding: 22px;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .app-shell {
+                display: block;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                min-width: 100%;
+                height: auto;
+                min-height: auto;
+            }
+
+            .sidebar nav {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .sidebar-bottom {
+                margin-top: 20px;
+            }
+
+            .main-area {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .header {
+                padding: 22px 18px;
+            }
+
+            .content {
+                padding: 20px 16px;
+            }
+        }
+
+        @media (max-width: 550px) {
             .form-grid {
                 grid-template-columns: 1fr;
             }
+
+            .panel {
+                padding: 19px;
+            }
+
+            .header h1 {
+                font-size: 21px;
+            }
+
+            .sidebar nav {
+                grid-template-columns: 1fr;
+            }
+
+            .content {
+                padding: 16px 12px;
+            }
         }
     </style>
+
+
 </head>
 
 <body>
-    <div class="container">
+    <div class="app-shell">
 
-        <header class="header">
-            <h1>Manage Farms</h1>
-            <p>Register farms and manage your dairy farm locations.</p>
+        <aside class="sidebar">
 
-            <a class="back" href="super_admin.php">
-                Back to Dashboard
+            <a href="index.php" class="brand">
+                <span class="logo small-logo">DF</span>
+                <span>
+                    DairyFlow
+                    <small>FARM MANAGEMENT</small>
+                </span>
             </a>
-        </header>
 
-        <section class="panel">
-            <h2>Register a New Farm</h2>
+            <p class="nav-label">WORKSPACE</p>
 
-            <?php if ($message !== ''): ?>
-                <div class="notice success">
-                    <?= e($message) ?>
-                </div>
-            <?php endif; ?>
+            <nav>
+                <a href="index.php">▦ &nbsp; Dashboard</a>
 
-            <?php if ($error !== ''): ?>
-                <div class="notice error">
-                    <?= e($error) ?>
-                </div>
-            <?php endif; ?>
+                <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
+                    <a href="cows.php">♧ &nbsp; Cows & Records</a>
+                    <a href="milk.php">◉ &nbsp; Milk Production</a>
+                    <a href="search.php">⌕ &nbsp; Search Cow</a>
+                    <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
+                <?php endif; ?>
 
-            <form method="POST" action="farms.php">
-                <input
-                    type="hidden"
-                    name="csrf_token"
-                    value="<?= e($_SESSION['csrf_token']) ?>">
+                <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
+                    <a href="feeds.php">🌾 &nbsp; Feed Inventory</a>
+                <?php endif; ?>
 
-                <div class="form-grid">
-                    <div class="field">
-                        <label for="farm_name">Farm Name *</label>
-                        <input
-                            type="text"
-                            id="farm_name"
-                            name="farm_name"
-                            maxlength="150"
-                            placeholder="e.g. Green Valley Dairy Farm"
-                            required>
+                <a href="reports.php">▥ &nbsp; Reports</a>
+
+                <?php if ($isSuperAdmin): ?>
+                    <a href="users.php">♙ &nbsp; Manage Users</a>
+                    <a class="active" href="farms.php">⌂ &nbsp; Manage Farms</a>
+                <?php endif; ?>
+
+                <?php if ($role === 'admin'): ?>
+                    <a class="active" href="users.php">♙ &nbsp; Manage Farm Managers</a>
+                <?php endif; ?>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="user-chip">
+                    <div class="avatar">
+                        <?= e(strtoupper(substr((string)($_SESSION['full_name'] ?? 'U'), 0, 1))) ?>
                     </div>
 
-                    <div class="field">
-                        <label for="location">Farm Location</label>
-                        <input
-                            type="text"
-                            id="location"
-                            name="location"
-                            maxlength="255"
-                            placeholder="e.g. Nanyuki, Laikipia">
-                    </div>
-
-                    <div class="field">
-                        <label for="contact_phone">Contact Phone</label>
-                        <input
-                            type="tel"
-                            id="contact_phone"
-                            name="contact_phone"
-                            maxlength="30"
-                            placeholder="Farm contact number">
+                    <div>
+                        <strong><?= e($_SESSION['full_name'] ?? 'User') ?></strong>
+                        <small><?= e(ucwords(str_replace('_', ' ', $role))) ?></small>
                     </div>
                 </div>
 
-                <button type="submit">Register Farm</button>
-            </form>
-        </section>
+                <a class="nav-link" href="change_password.php">
+                    🔐 Change Password
+                </a>
 
-        <section class="panel">
-            <h2>Registered Farms</h2>
-
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Farm Name</th>
-                            <th>Location</th>
-                            <th>Contact</th>
-                            <th>Status</th>
-                            <th>Date Created</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        <?php if (empty($farms)): ?>
-                            <tr>
-                                <td colspan="6">
-                                    No farms registered yet. Add your first farm above.
-                                </td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($farms as $farm): ?>
-                                <tr>
-                                    <td><?= e((string)$farm['farm_id']) ?></td>
-                                    <td><?= e($farm['farm_name']) ?></td>
-                                    <td><?= e($farm['location'] ?? 'Not provided') ?></td>
-                                    <td><?= e($farm['contact_phone'] ?? 'Not provided') ?></td>
-                                    <td>
-                                        <span class="status">
-                                            <?= e(ucfirst($farm['status'] ?? 'Unknown')) ?>
-                                        </span>
-                                    </td>
-                                    <td><?= e($farm['created_at'] ?? '') ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                <a class="logout" href="logout.php">
+                    ↪ Sign out
+                </a>
             </div>
-        </section>
 
-    </div>
+        </aside>
+        <main class="main-area">
+            <header class="header">
+                <h1>Manage Farms</h1>
+                <p>Register farms and manage your dairy farm locations.</p>
+
+
+            </header>
+            <div class="content">
+                <section class="panel">
+                    <h2>Register a New Farm</h2>
+
+                    <?php if ($message !== ''): ?>
+                        <div class="notice success">
+                            <?= e($message) ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($error !== ''): ?>
+                        <div class="notice error">
+                            <?= e($error) ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <form method="POST" action="farms.php">
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            value="<?= e($_SESSION['csrf_token']) ?>">
+
+                        <div class="form-grid">
+                            <div class="field">
+                                <label for="farm_name">Farm Name *</label>
+                                <input
+                                    type="text"
+                                    id="farm_name"
+                                    name="farm_name"
+                                    maxlength="150"
+                                    placeholder="e.g. Green Valley Dairy Farm"
+                                    required>
+                            </div>
+
+                            <div class="field">
+                                <label for="location">Farm Location</label>
+                                <input
+                                    type="text"
+                                    id="location"
+                                    name="location"
+                                    maxlength="255"
+                                    placeholder="e.g. Nanyuki, Laikipia">
+                            </div>
+
+                            <div class="field">
+                                <label for="contact_phone">Contact Phone</label>
+                                <input
+                                    type="tel"
+                                    id="contact_phone"
+                                    name="contact_phone"
+                                    maxlength="30"
+                                    placeholder="Farm contact number">
+                            </div>
+                        </div>
+
+                        <button type="submit">Register Farm</button>
+                    </form>
+                </section>
+
+                <section class="panel">
+                    <h2>Registered Farms</h2>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Farm Name</th>
+                                    <th>Location</th>
+                                    <th>Contact</th>
+                                    <th>Status</th>
+                                    <th>Date Created</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <?php if (empty($farms)): ?>
+                                    <tr>
+                                        <td colspan="6">
+                                            No farms registered yet. Add your first farm above.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($farms as $farm): ?>
+                                        <tr>
+                                            <td><?= e((string)$farm['farm_id']) ?></td>
+                                            <td><?= e($farm['farm_name']) ?></td>
+                                            <td><?= e($farm['location'] ?? 'Not provided') ?></td>
+                                            <td><?= e($farm['contact_phone'] ?? 'Not provided') ?></td>
+                                            <td>
+                                                <span class="status">
+                                                    <?= e(ucfirst($farm['status'] ?? 'Unknown')) ?>
+                                                </span>
+                                            </td>
+                                            <td><?= e($farm['created_at'] ?? '') ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
 </body>
 
 </html>

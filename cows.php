@@ -363,385 +363,314 @@ function cowStatusClass(string $status): string
     <title>Cow Management | Dairy Farm System</title>
     <link rel="stylesheet" href="assets/style.css">
 
-    
 
 
-<style>
-    /* ==============================
-       GLOBAL STYLES
-    ============================== */
-    * {
-        box-sizing: border-box;
-    }
+    <link rel="stylesheet" href="assets/styles.css">
 
-    :root {
-        --background: #F4F7F5;
-        --ink: #20372F;
-        --navy: #142D35;
-        --lime: #C5E86C;
-        --muted: #8CA59E;
-    }
+    <style>
+        /* =========================================
+   COWS PAGE - PAGE SPECIFIC STYLES
+   Sidebar styles are in assets/styles.css
+========================================= */
 
-    body {
-        margin: 0;
-        padding: 0;
-        background: var(--background);
-        color: var(--ink);
-        font-family: 'DM Sans', sans-serif;
-        font-size: 14px;
-    }
+        /* GLOBAL PAGE SETTINGS */
 
-    a {
-        color: inherit;
-        text-decoration: none;
-    }
-
-    /* ==============================
-       DASHBOARD LAYOUT
-    ============================== */
-    .dashboard-layout {
-        display: flex;
-        align-items: stretch;
-        width: 100%;
-        min-height: 100vh;
-        margin: 0;
-        padding: 0;
-    }
-
-    /* ==============================
-       SIDEBAR
-    ============================== */
-    .sidebar {
-        width: 250px;
-        min-width: 250px;
-        min-height: 100vh;
-        flex-shrink: 0;
-        display: flex;
-        flex-direction: column;
-        padding: 26px 17px;
-        background: var(--navy);
-        color: #DCE8E3;
-    }
-
-    .sidebar-brand {
-        display: flex;
-        align-items: center;
-        gap: 11px;
-        padding: 0 10px 35px;
-        color: white;
-    }
-
-    .sidebar-brand h2 {
-        display: grid;
-        place-items: center;
-        width: 48px;
-        height: 48px;
-        min-width: 48px;
-        margin: 0;
-        border-radius: 15px;
-        background: var(--lime);
-        color: var(--navy);
-        font-size: 15px;
-        font-weight: 800;
-    }
-
-    .sidebar-brand span {
-        display: block;
-        color: #A9BFBA;
-        font-size: 9px;
-        font-weight: 600;
-        letter-spacing: 1.5px;
-        line-height: 1.5;
-    }
-
-    .sidebar nav {
-        display: grid;
-        gap: 6px;
-    }
-
-    .sidebar nav a {
-        display: block;
-        padding: 12px;
-        border-radius: 10px;
-        color: #B9CBC5;
-        font-size: 12px;
-        transition: background 0.2s ease, color 0.2s ease;
-    }
-
-    .sidebar nav a:hover,
-    .sidebar nav a.active {
-        background: #214B48;
-        color: white;
-    }
-
-    /* ==============================
-       MAIN CONTENT
-    ============================== */
-    .main-content {
-        flex: 1;
-        min-width: 0;
-        width: calc(100% - 250px);
-        margin: 0;
-        padding: 0;
-        background: var(--background);
-    }
-
-    /* ==============================
-       COW MANAGEMENT PAGE
-    ============================== */
-    .cow-page {
-        width: 100%;
-        max-width: 1250px;
-        margin: 0 auto;
-        padding: 28px;
-    }
-
-    .cow-page h1 {
-        margin-top: 0;
-        margin-bottom: 8px;
-        color: var(--ink);
-    }
-
-    .cow-page h2 {
-        margin-top: 0;
-        color: var(--ink);
-    }
-
-    /* ==============================
-       COW CARDS
-    ============================== */
-    .cow-card {
-        width: 100%;
-        background: #fff;
-        padding: 24px;
-        border-radius: 14px;
-        margin-bottom: 24px;
-        box-shadow: 0 3px 14px rgba(0, 0, 0, 0.06);
-    }
-
-    /* ==============================
-       REGISTRATION FORM
-    ============================== */
-    .cow-form {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 16px;
-        width: 100%;
-    }
-
-    .cow-field {
-        display: flex;
-        flex-direction: column;
-        gap: 7px;
-        min-width: 0;
-    }
-
-    .cow-field label {
-        font-weight: 600;
-        color: #34483a;
-    }
-
-    .cow-field input,
-    .cow-field select,
-    .cow-field textarea {
-        width: 100%;
-        padding: 11px;
-        border: 1px solid #d5ddd7;
-        border-radius: 7px;
-        font: inherit;
-        background: #fff;
-        outline: none;
-    }
-
-    .cow-field input:focus,
-    .cow-field select:focus,
-    .cow-field textarea:focus {
-        border-color: #176b45;
-        box-shadow: 0 0 0 2px rgba(23, 107, 69, 0.1);
-    }
-
-    .cow-field textarea {
-        min-height: 85px;
-        resize: vertical;
-    }
-
-    .cow-field.full,
-    .cow-form button {
-        grid-column: 1 / -1;
-    }
-
-    /* ==============================
-       REGISTER BUTTON
-    ============================== */
-    .cow-button {
-        padding: 12px 18px;
-        background: #176b45;
-        color: white;
-        border: 0;
-        border-radius: 7px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 15px;
-    }
-
-    .cow-button:hover {
-        background: #105537;
-    }
-
-    /* ==============================
-       COW RECORDS TABLE
-    ============================== */
-    .cow-table-wrap {
-        width: 100%;
-        overflow-x: auto;
-    }
-
-    .cow-table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 760px;
-    }
-
-    .cow-table th,
-    .cow-table td {
-        text-align: left;
-        padding: 12px;
-        border-bottom: 1px solid #e6ebe7;
-    }
-
-    .cow-table th {
-        background: #f3f7f4;
-        color: var(--ink);
-        font-weight: 600;
-    }
-
-    .cow-table tbody tr:hover {
-        background: #f8fbf8;
-    }
-
-    /* ==============================
-       COW STATUS
-    ============================== */
-    .cow-status {
-        display: inline-block;
-        padding: 5px 9px;
-        border-radius: 20px;
-        background: #eef2ef;
-        text-transform: capitalize;
-    }
-
-    .cow-status.active,
-    .cow-status.pregnant {
-        background: #e2f5e8;
-        color: #176b45;
-    }
-
-    .cow-status.sick {
-        background: #fff0d8;
-        color: #885600;
-    }
-
-    .cow-status.deceased {
-        background: #fce8e8;
-        color: #9d2525;
-    }
-
-    .cow-status.sold {
-        background: #e8eaf6;
-        color: #3949ab;
-    }
-
-    .cow-status.dry {
-        background: #fff3e0;
-        color: #e65100;
-    }
-
-    /* ==============================
-       ALERT MESSAGES
-    ============================== */
-    .cow-alert {
-        padding: 12px 15px;
-        border-radius: 8px;
-        margin-bottom: 16px;
-    }
-
-    .cow-alert.success {
-        background: #e2f5e8;
-        color: #176b45;
-    }
-
-    .cow-alert.error {
-        background: #fdeaea;
-        color: #9d2525;
-    }
-
-    .cow-muted {
-        color: #68776d;
-    }
-
-    /* ==============================
-       TABLET RESPONSIVENESS
-    ============================== */
-    @media (max-width: 900px) {
-        .sidebar {
-            width: 220px;
-            min-width: 220px;
+        * {
+            box-sizing: border-box;
         }
+
+        :root {
+            --background: #f5f8f6;
+            --ink: #1c3029;
+            --green: #23865b;
+            --green-dark: #176b46;
+            --muted: #788b81;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--background);
+            color: var(--ink);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* MAIN CONTENT */
 
         .main-content {
-            width: calc(100% - 220px);
+            margin-left: 248px;
+            width: calc(100% - 248px);
+            min-width: 0;
+            min-height: 100vh;
+            background: var(--background);
         }
+
+        /* COW MANAGEMENT PAGE */
 
         .cow-page {
-            padding: 20px;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
         }
-    }
 
-    /* ==============================
-       MOBILE RESPONSIVENESS
-    ============================== */
-    @media (max-width: 650px) {
-        .dashboard-layout {
+        .cow-page h1 {
+            margin: 0 0 8px;
+            color: var(--ink);
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .cow-page h2 {
+            margin-top: 0;
+            color: var(--ink);
+        }
+
+        /* COW CARDS */
+
+        .cow-card {
+            width: 100%;
+            padding: 24px;
+            margin-bottom: 24px;
+            background: #ffffff;
+            border: 1px solid #e8eee9;
+            border-radius: 14px;
+            box-shadow: 0 3px 14px rgba(16, 42, 37, 0.05);
+        }
+
+        /* REGISTRATION FORM */
+
+        .cow-form {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+            width: 100%;
+        }
+
+        .cow-field {
+            display: flex;
             flex-direction: column;
-        }
-
-        .sidebar {
-            width: 100%;
-            min-width: 100%;
-            min-height: auto;
-        }
-
-        .sidebar-brand {
-            padding-bottom: 20px;
-        }
-
-        .sidebar nav {
-            gap: 5px;
-        }
-
-        .main-content {
-            width: 100%;
+            gap: 7px;
             min-width: 0;
         }
 
-        .cow-page {
-            padding: 14px;
+        .cow-field label {
+            color: #34483a;
+            font-size: 13px;
+            font-weight: 600;
         }
 
-        .cow-card {
-            padding: 16px;
+        .cow-field input,
+        .cow-field select,
+        .cow-field textarea {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #d5ddd7;
+            border-radius: 8px;
+            background: #ffffff;
+            color: var(--ink);
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        .cow-form {
-            grid-template-columns: 1fr;
+        .cow-field input:focus,
+        .cow-field select:focus,
+        .cow-field textarea:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(35, 134, 91, 0.10);
+        }
+
+        .cow-field textarea {
+            min-height: 90px;
+            resize: vertical;
         }
 
         .cow-field.full,
         .cow-form button {
-            grid-column: auto;
+            grid-column: 1 / -1;
         }
-    }
-</style>
+
+        /* REGISTER BUTTON */
+
+        .cow-button {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: var(--green);
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .cow-button:hover {
+            background: var(--green-dark);
+        }
+
+        /* COW RECORDS TABLE */
+
+        .cow-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 9px;
+        }
+
+        .cow-table {
+            width: 100%;
+            min-width: 760px;
+            border-collapse: collapse;
+            background: #ffffff;
+        }
+
+        .cow-table th,
+        .cow-table td {
+            padding: 13px 14px;
+            text-align: left;
+            border-bottom: 1px solid #e6ebe7;
+            font-size: 13px;
+        }
+
+        .cow-table th {
+            background: #f3f7f4;
+            color: var(--ink);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .cow-table tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        .cow-table tbody tr:hover {
+            background: #f8fbf8;
+        }
+
+        .cow-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* COW STATUS */
+
+        .cow-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: #eef2ef;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: capitalize;
+            white-space: nowrap;
+        }
+
+        .cow-status.active,
+        .cow-status.pregnant {
+            background: #e2f5e8;
+            color: #176b45;
+        }
+
+        .cow-status.sick {
+            background: #fff0d8;
+            color: #885600;
+        }
+
+        .cow-status.deceased {
+            background: #fce8e8;
+            color: #9d2525;
+        }
+
+        .cow-status.sold {
+            background: #e8eaf6;
+            color: #3949ab;
+        }
+
+        .cow-status.dry {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        /* ALERT MESSAGES */
+
+        .cow-alert {
+            padding: 13px 16px;
+            margin-bottom: 18px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .cow-alert.success {
+            background: #e2f5e8;
+            color: #176b45;
+        }
+
+        .cow-alert.error {
+            background: #fdeaea;
+            color: #9d2525;
+        }
+
+        /* MUTED TEXT */
+
+        .cow-muted {
+            color: var(--muted);
+        }
+
+        /* TABLET */
+
+        @media (max-width: 900px) {
+            .main-content {
+                margin-left: 248px;
+                width: calc(100% - 248px);
+            }
+
+            .cow-page {
+                padding: 22px;
+            }
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 760px) {
+            .main-content {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .cow-page {
+                padding: 16px;
+            }
+
+            .cow-card {
+                padding: 18px;
+            }
+
+            .cow-form {
+                grid-template-columns: 1fr;
+            }
+
+            .cow-field.full,
+            .cow-form button {
+                grid-column: 1;
+            }
+
+            .cow-page h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+
 
 
 
@@ -750,7 +679,7 @@ function cowStatusClass(string $status): string
 <body>
     <div class="dashboard-layout">
 
-         <aside class="sidebar">
+        <aside class="sidebar">
             <a href="index.php" class="brand">
                 <span class="logo small-logo">DF</span>
                 <span>DairyFlow<small>FARM MANAGEMENT</small></span>
@@ -758,10 +687,10 @@ function cowStatusClass(string $status): string
 
             <p class="nav-label">WORKSPACE</p>
             <nav>
-                <a class="active" href="index.php">▦ &nbsp; Dashboard</a>
+                <a href="index.php">▦ &nbsp; Dashboard</a>
 
                 <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
-                    <a href="cows.php">♧ &nbsp; Cows & Records</a>
+                    <a class="active" href="cows.php">♧ &nbsp; Cows & Records</a>
                     <a href="milk.php">◉ &nbsp; Milk Production</a>
                     <a href="search.php">⌕ &nbsp; search cow</a>
 

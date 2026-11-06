@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/auth.php';
+
 
 requireLogin();
 requireRole(['super_admin', 'admin', 'farm_manager']);
@@ -221,181 +223,553 @@ $dashboardUrl = match ($role) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= searchEscape($pageTitle) ?> | DairyFlow</title>
-    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/styles.css">
     <style>
+        :root {
+            --navy: #102a25;
+            --navy-light: #183b33;
+            --green: #23865b;
+            --green-dark: #176b46;
+            --mint: #e9f7ef;
+            --bg: #f5f8f6;
+            --text: #1c3029;
+            --muted: #788b81;
+            --line: #e5ebe7;
+            --white: #ffffff;
+            --shadow: 0 12px 32px rgba(16, 42, 37, 0.055);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        /* Main dashboard layout */
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        .app-shell>.sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            width: 248px;
+            height: 100vh;
+            padding: 26px 15px 18px;
+            overflow-y: auto;
+            background: var(--navy);
+            color: var(--white);
+        }
+
+        .sidebar .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 9px;
+            margin-bottom: 36px;
+            color: var(--white);
+            font-family: 'Manrope', sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .sidebar .brand small {
+            display: block;
+            margin-top: 3px;
+            color: #a7c8b6;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+        }
+
+        .sidebar .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: var(--green);
+            color: white;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .sidebar .nav-label {
+            padding: 0 12px;
+            margin: 0 0 12px;
+            color: #83a596;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .sidebar nav a,
+        .sidebar .nav-link,
+        .sidebar .logout {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 43px;
+            padding: 11px 13px;
+            border-radius: 9px;
+            color: #c2d4ca;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background .2s, color .2s;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar .nav-link:hover,
+        .sidebar .logout:hover {
+            background: var(--navy-light);
+            color: white;
+        }
+
+        .sidebar nav a.active {
+            background: var(--green);
+            color: white;
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, .10);
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 7px 15px;
+            min-width: 0;
+        }
+
+        .user-chip .avatar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 35px;
+            height: 35px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: #d5eee0;
+            color: var(--navy);
+            font-weight: 800;
+        }
+
+        .user-chip strong {
+            display: block;
+            color: white;
+            font-size: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        .user-chip small {
+            display: block;
+            margin-top: 4px;
+            color: #a7c8b6;
+            font-size: 10px;
+        }
+
+        .sidebar .logout {
+            color: #f1b8b8;
+        }
+
+        /* Main content and topbar */
+        .app-shell>.main-area {
+            width: calc(100% - 248px);
+            min-width: 0;
+            min-height: 100vh;
+            margin-left: 248px;
+            background: var(--bg);
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            min-height: 83px;
+            padding: 15px 36px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(255, 255, 255, .96);
+        }
+
+        .eyebrow {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--green);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.4px;
+        }
+
+        .topbar h1 {
+            margin: 0;
+            color: var(--navy);
+            font-family: 'Manrope', sans-serif;
+            font-size: 23px;
+            font-weight: 800;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #27a66b;
+        }
+
+        .top-avatar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            margin-left: 10px;
+            border-radius: 50%;
+            background: var(--mint);
+            color: var(--green-dark);
+            font-weight: 800;
+        }
+
+        .content {
+            width: 100%;
+            max-width: 1600px;
+            padding: 29px 36px 36px;
+            margin: 0 auto;
+        }
+
+        /* Cow search components */
         .search-wrap {
-            max-width: 1200px;
+            width: 100%;
+            max-width: 1600px;
             margin: 0 auto;
         }
 
         .search-panel,
         .profile-panel,
         .record-panel {
-            background: var(--card, #fff);
-            border: 1px solid #e4ebe5;
-            border-radius: 16px;
-            padding: 22px;
-            margin-bottom: 22px;
-            box-shadow: 0 5px 18px rgba(20, 50, 30, .04);
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--line);
+            border-radius: 15px;
+            background: var(--white);
+            box-shadow: var(--shadow);
+        }
+
+        .search-panel h2,
+        .profile-panel h2,
+        .record-panel h3,
+        .profile-panel h3 {
+            color: var(--navy);
+            font-family: 'Manrope', sans-serif;
+            font-weight: 750;
+        }
+
+        .search-panel h2 {
+            margin: 0 0 8px;
+            font-size: 20px;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
         }
 
         .search-form {
             display: flex;
-            gap: 10px;
             flex-wrap: wrap;
-            margin-top: 15px;
+            gap: 12px;
+            margin-top: 18px;
         }
 
         .search-form input {
             flex: 1;
             min-width: 220px;
-            padding: 13px 15px;
-            border: 1px solid #d7e2d9;
+            padding: 14px 16px;
+            border: 1px solid #dce6df;
             border-radius: 10px;
+            outline: none;
+            background: #fbfdfb;
+            color: var(--text);
             font: inherit;
+            font-size: 14px;
+        }
+
+        .search-form input:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(35, 134, 91, .10);
         }
 
         .search-button {
+            padding: 13px 23px;
             border: 0;
             border-radius: 10px;
-            padding: 13px 20px;
-            background: #176b43;
+            background: var(--green);
             color: white;
+            font: inherit;
             font-weight: 700;
             cursor: pointer;
+            transition: background .2s;
         }
 
         .search-button:hover {
-            background: #105536;
+            background: var(--green-dark);
         }
 
         .cow-results {
             display: grid;
-            gap: 10px;
-            margin-top: 16px;
+            gap: 11px;
+            margin-top: 18px;
         }
 
         .cow-result {
             display: block;
-            padding: 15px;
-            border: 1px solid #e4ebe5;
+            padding: 17px 18px;
+            border: 1px solid var(--line);
             border-radius: 12px;
-            color: inherit;
+            background: white;
+            color: var(--text);
             text-decoration: none;
+            transition: .2s;
         }
 
         .cow-result:hover {
-            border-color: #176b43;
-            background: #f6fbf7;
+            border-color: var(--green);
+            background: #f8fcf9;
         }
 
         .cow-result strong {
-            color: #176b43;
+            color: var(--green-dark);
+            font-size: 15px;
+        }
+
+        .cow-result .muted {
+            margin: 7px 0 4px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 11px;
+            border-radius: 30px;
+            background: var(--mint);
+            color: var(--green-dark);
+            font-size: 11px;
+            font-weight: 700;
         }
 
         .profile-heading {
             display: flex;
+            align-items: flex-start;
             justify-content: space-between;
-            gap: 12px;
             flex-wrap: wrap;
+            gap: 15px;
         }
 
         .profile-heading h2 {
-            margin: 4px 0;
-        }
-
-        .tag {
-            display: inline-block;
-            padding: 6px 10px;
-            background: #eaf5ed;
-            color: #176b43;
-            border-radius: 20px;
-            font-size: .85rem;
-            font-weight: 700;
+            margin: 4px 0 10px;
+            font-size: 22px;
         }
 
         .detail-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
-            gap: 12px;
-            margin-top: 20px;
+            gap: 13px;
+            margin-top: 22px;
         }
 
         .detail-item {
-            padding: 13px;
-            background: #f6f9f6;
-            border-radius: 10px;
+            min-width: 0;
+            padding: 16px;
             overflow-wrap: anywhere;
+            border: 1px solid #edf2ee;
+            border-radius: 11px;
+            background: #f7faf8;
         }
 
         .detail-item small {
             display: block;
-            color: #68776d;
-            margin-bottom: 5px;
+            margin-bottom: 7px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
         }
 
         .detail-item strong {
-            color: #23382b;
+            color: var(--navy);
+            font-size: 14px;
         }
 
-        .record-panel h3,
+        .record-panel h3 {
+            margin: 0 0 18px;
+            font-size: 17px;
+        }
+
         .profile-panel h2 {
             margin-top: 0;
         }
 
         .record-table {
             width: 100%;
-            border-collapse: collapse;
             min-width: 600px;
+            border-collapse: collapse;
         }
 
         .table-scroll {
+            width: 100%;
             overflow-x: auto;
+            border-radius: 10px;
         }
 
         .record-table th,
         .record-table td {
+            padding: 14px 15px;
+            border-bottom: 1px solid var(--line);
             text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #e7eee8;
             vertical-align: top;
+            font-size: 13px;
         }
 
         .record-table th {
-            color: #526457;
-            background: #f6f9f6;
-            font-size: .84rem;
+            background: #f5f8f6;
+            color: #64776c;
+            font-size: 11px;
+            font-weight: 750;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .record-table td {
+            color: var(--text);
+        }
+
+        .record-table tbody tr:hover {
+            background: #f9fcfa;
         }
 
         .empty-state {
-            color: #68776d;
-            padding: 14px 0;
+            padding: 18px 0;
+            color: var(--muted);
+            font-size: 14px;
         }
 
         .notice {
-            padding: 13px 15px;
-            border-radius: 10px;
-            margin-bottom: 16px;
-            background: #fff4e6;
+            padding: 15px 17px;
+            margin-bottom: 18px;
+            border: 1px solid #f2dfc2;
+            border-radius: 11px;
+            background: #fff8ed;
             color: #874c00;
+            font-size: 14px;
         }
 
         .family-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 12px;
+            gap: 14px;
         }
 
         .family-card {
-            padding: 15px;
-            border: 1px solid #e4ebe5;
+            padding: 17px;
+            border: 1px solid var(--line);
             border-radius: 12px;
+            background: #fbfdfb;
+        }
+
+        .family-card strong {
+            color: var(--navy);
         }
 
         .back-link {
-            color: #176b43;
-            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 18px;
+            color: var(--green-dark);
+            font-size: 13px;
             font-weight: 700;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: var(--navy);
+        }
+
+        /* Tablet and mobile */
+        @media (max-width: 900px) {
+            .content {
+                padding: 24px 20px;
+            }
+
+            .topbar {
+                padding: 15px 20px;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .app-shell>.sidebar {
+                transform: translateX(-100%);
+            }
+
+            .app-shell>.main-area {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .topbar {
+                min-height: 72px;
+            }
+
+            .topbar h1 {
+                font-size: 20px;
+            }
+
+            .content {
+                padding: 20px 15px;
+            }
         }
 
         @media (max-width: 600px) {
@@ -403,11 +777,41 @@ $dashboardUrl = match ($role) {
             .search-panel,
             .profile-panel,
             .record-panel {
-                padding: 16px;
+                padding: 17px;
+                border-radius: 12px;
             }
 
+            .search-form {
+                flex-direction: column;
+            }
+
+            .search-form input,
             .search-button {
                 width: 100%;
+                min-width: 0;
+            }
+
+            .profile-heading h2 {
+                font-size: 19px;
+            }
+
+            .detail-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .topbar-right {
+                font-size: 0;
+            }
+
+            .topbar-right .status-dot,
+            .topbar-right .top-avatar {
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -422,12 +826,12 @@ $dashboardUrl = match ($role) {
             </a>
             <p class="nav-label">WORKSPACE</p>
             <nav>
-                <a class="active" href="index.php">▦ &nbsp; Dashboard</a>
+                <a href="index.php">▦ &nbsp; Dashboard</a>
 
                 <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
                     <a href="cows.php">♧ &nbsp; Cows & Records</a>
                     <a href="milk.php">◉ &nbsp; Milk Production</a>
-                    <a href="search.php">⌕ &nbsp; search cow</a>
+                    <a class="active" href="search.php">⌕ &nbsp; search cow</a>
 
                     <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
                 <?php endif; ?>
@@ -465,10 +869,15 @@ $dashboardUrl = match ($role) {
             <header class="topbar">
                 <div>
                     <span class="eyebrow">DAIRY FARM MANAGEMENT</span>
-                    <h1>Cow Search</h1>
+                    <h1><?= searchEscape($pageTitle) ?></h1>
                 </div>
+
                 <div class="topbar-right">
-                    <span class="status-dot"></span> System online
+                    <span class="status-dot"></span>
+                    System online
+                    <span class="top-avatar">
+                        <?= searchEscape(strtoupper(substr($_SESSION['full_name'] ?? 'U', 0, 1))) ?>
+                    </span>
                 </div>
             </header>
 

@@ -564,36 +564,42 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Health & Vaccination | DairyFlow</title>
-
+    <link rel="stylesheet" href="assets/style.css">
     <style>
         :root {
-            --green: #198754;
-            --green-dark: #11643e;
+            --navy: #102a25;
+            --navy-light: #183b33;
+            --green: #23865b;
+            --green-dark: #176b46;
+            --mint: #e9f7ef;
             --green-light: #e9f7ef;
-            --navy: #142b45;
-            --navy-light: #25445b;
-            --ink: #263548;
-            --muted: #788697;
-            --line: #e6ebf0;
-            --bg: #f5f8fa;
-            --white: #fff;
+            --bg: #f5f8f6;
+            --text: #1c3029;
+            --ink: #1c3029;
+            --muted: #788b81;
+            --line: #e5ebe7;
+            --white: #ffffff;
             --red: #c0392b;
             --amber: #9a6700;
+            --shadow: 0 12px 32px rgba(16, 42, 37, 0.055);
         }
 
         * {
             box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            margin: 0;
+            font-family: 'DM Sans', 'Manrope', sans-serif;
             background: var(--bg);
-            color: var(--ink);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
         }
 
         button,
@@ -603,96 +609,80 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             font: inherit;
         }
 
-        button {
-            cursor: pointer;
-        }
-
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        /* =========================
-       MAIN LAYOUT
-    ========================= */
+        /* MAIN LAYOUT */
 
         .layout {
             display: flex;
             min-height: 100vh;
+            width: 100%;
         }
 
-        .main {
-            flex: 1;
-            min-width: 0;
-        }
-
-        /* =========================
-       SIDEBAR
-    ========================= */
-
-        .sidebar {
-            width: 255px;
-            min-width: 255px;
-            min-height: 100vh;
-            flex-shrink: 0;
+        .layout>.sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 248px;
+            height: 100vh;
+            background: var(--navy);
+            color: #ffffff;
+            padding: 25px 17px;
             display: flex;
             flex-direction: column;
-            padding: 25px 16px 18px;
-            color: #fff;
-            background: var(--navy);
+            overflow-y: auto;
+            z-index: 1000;
         }
 
-        /* BRAND */
+        .layout>.main {
+            width: calc(100% - 248px);
+            min-height: 100vh;
+            margin-left: 248px;
+            background: var(--bg);
+        }
 
-        .brand {
+        /* SIDEBAR */
+
+        .sidebar .brand {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 0 8px 28px;
-            font-size: 19px;
+            padding: 5px 8px 28px;
+            color: #ffffff;
+            font-size: 18px;
             font-weight: 800;
-            color: #fff;
+            letter-spacing: -0.5px;
         }
 
-        .logo {
-            display: grid;
-            place-items: center;
-            width: 45px;
-            height: 45px;
-            flex-shrink: 0;
-            border-radius: 13px;
-            background: var(--green);
-            color: #fff;
-            font-size: 17px;
-            font-weight: 900;
-        }
-
-        .small-logo {
-            width: 42px;
-            height: 42px;
-        }
-
-        .brand small {
+        .sidebar .brand small {
             display: block;
             margin-top: 4px;
-            color: #b8c6d6;
+            color: #a6c1b5;
             font-size: 9px;
-            letter-spacing: 1.7px;
-            font-weight: 600;
+            font-weight: 700;
+            letter-spacing: 1.5px;
         }
 
-        /* NAVIGATION LABEL */
+        .logo,
+        .small-logo {
+            width: 39px;
+            height: 39px;
+            border-radius: 12px;
+            background: var(--green);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
 
         .nav-label {
-            padding: 15px 11px 9px;
-            margin: 0;
-            color: #a9b9ca;
+            padding: 13px 10px 9px;
+            color: #88a99a;
             font-size: 10px;
             font-weight: 800;
-            letter-spacing: 1.6px;
+            letter-spacing: 1.5px;
         }
-
-        /* NAVIGATION */
 
         .sidebar nav {
             display: flex;
@@ -700,289 +690,275 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             gap: 5px;
         }
 
-        .sidebar nav a {
+        .sidebar nav a,
+        .sidebar .nav-link,
+        .sidebar .logout {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 11px;
             padding: 12px 13px;
             border-radius: 9px;
-            color: #dbe4ed;
+            color: #c3d5cd;
             font-size: 13px;
-            font-weight: 500;
-            transition: background .2s ease, color .2s ease;
+            font-weight: 600;
+            transition: 0.2s ease;
         }
 
-        .sidebar nav a:hover {
+        .sidebar nav a:hover,
+        .sidebar .nav-link:hover {
             background: var(--navy-light);
-            color: #fff;
+            color: #ffffff;
         }
 
         .sidebar nav a.active {
-            background: var(--navy-light);
-            color: #fff;
-            border-left: 3px solid #56d38c;
-            padding-left: 10px;
-            font-weight: 700;
+            background: var(--green);
+            color: #ffffff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
         }
-
-        /* SIDEBAR BOTTOM */
 
         .sidebar-bottom {
             margin-top: auto;
-            padding-top: 22px;
-            border-top: 1px solid rgba(255, 255, 255, .12);
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
-
-        /* USER PROFILE */
 
         .user-chip {
             display: flex;
             align-items: center;
             gap: 11px;
-            padding: 12px 8px 18px;
-            min-width: 0;
-        }
-
-        .user-chip .avatar {
-            display: grid;
-            place-items: center;
-            width: 39px;
-            height: 39px;
-            min-width: 39px;
-            border-radius: 50%;
-            background: var(--green-light);
-            color: var(--green-dark);
-            font-size: 15px;
-            font-weight: 800;
+            padding: 10px 7px 17px;
+            color: #ffffff;
         }
 
         .user-chip strong {
             display: block;
-            color: #fff;
             font-size: 12px;
-            overflow-wrap: anywhere;
+            font-weight: 700;
         }
 
         .user-chip small {
             display: block;
             margin-top: 4px;
-            color: #a9b9ca;
+            color: #a6c1b5;
             font-size: 10px;
         }
 
-        /* CHANGE PASSWORD */
-
-        .sidebar-bottom .nav-link {
+        .user-chip .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #d7f2e3;
+            color: var(--navy);
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 11px 12px;
-            margin: 4px 0;
-            border-radius: 8px;
-            color: #dbe4ed;
-            font-size: 12px;
-            transition: .2s;
+            justify-content: center;
+            font-weight: 800;
+            flex-shrink: 0;
         }
 
-        .sidebar-bottom .nav-link:hover {
-            background: var(--navy-light);
-            color: #fff;
+        .sidebar .logout {
+            color: #f4a5a5;
         }
 
-        .nav-icon {
-            font-size: 15px;
+        .sidebar .logout:hover {
+            background: rgba(220, 70, 70, 0.12);
         }
 
-        /* LOGOUT */
-
-        .logout {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px;
-            margin-top: 5px;
-            border-radius: 8px;
-            color: #ffb4ad;
-            font-size: 12px;
-            font-weight: 700;
-            transition: .2s;
-        }
-
-        .logout:hover {
-            background: rgba(220, 70, 70, .15);
-            color: #ff7770;
-        }
-
-        /* =========================
-       TOPBAR
-    ========================= */
+        /* TOPBAR */
 
         .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            padding: 20px 32px;
-            background: #fff;
+            min-height: 88px;
+            padding: 17px 36px;
+            background: #ffffff;
             border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .topbar small {
+        .topbar .eyebrow {
+            display: block;
+            margin-bottom: 5px;
             color: var(--muted);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.4px;
         }
 
-        .user-pill {
+        .topbar h1 {
+            color: var(--navy);
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.7px;
+        }
+
+        .topbar .user-pill,
+        .topbar .topbar-right {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 13px;
-            font-weight: 700;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
         }
 
-        .avatar {
-            display: grid;
-            place-items: center;
-            width: 38px;
-            height: 38px;
-            background: var(--green-light);
-            color: var(--green-dark);
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            display: inline-block;
             border-radius: 50%;
+            background: #22a06b;
         }
 
-        /* =========================
-       CONTENT
-    ========================= */
+        .topbar .avatar,
+        .topbar .top-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--mint);
+            color: var(--green-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+
+        /* PAGE CONTENT */
 
         .content {
-            max-width: 1500px;
-            margin: auto;
-            padding: 30px;
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 29px 36px 40px;
         }
+
+        .content h2 {
+            color: var(--navy);
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .content h3 {
+            color: var(--navy);
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .content p {
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        /* PAGE INTRO */
 
         .page-heading {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            flex-wrap: wrap;
+            align-items: center;
             gap: 15px;
-            margin-bottom: 25px;
+            margin-bottom: 23px;
         }
 
-        h1 {
-            margin: 0 0 8px;
-            font-size: 28px;
-            color: var(--navy);
-        }
-
-        h2 {
-            margin: 0 0 20px;
-            font-size: 17px;
-            color: var(--navy);
-        }
-
-        p {
-            line-height: 1.6;
-        }
-
-        .muted {
-            color: var(--muted);
-            font-size: 13px;
+        .page-heading h2 {
+            margin-bottom: 5px;
         }
 
         .farm-label {
-            display: inline-block;
-            padding: 9px 13px;
-            border-radius: 9px;
-            background: var(--green-light);
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 12px;
+            border-radius: 30px;
+            background: var(--mint);
             color: var(--green-dark);
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
         }
 
-        /* =========================
-       STATISTICS
-    ========================= */
+        /* STATISTICS */
 
         .stats {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 17px;
-            margin-bottom: 25px;
-        }
-
-        .stat,
-        .panel {
-            background: #fff;
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            box-shadow: 0 3px 15px rgba(20, 43, 69, .025);
+            margin: 22px 0 25px;
         }
 
         .stat {
-            padding: 21px;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            min-width: 0;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .stat-top {
+        .stat:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(16, 42, 37, 0.09);
+        }
+
+        .stat h3 {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 13px;
+        }
+
+        .stat strong {
+            display: block;
+            color: var(--navy);
+            font-size: 29px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .stat small {
+            display: block;
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 7px;
+        }
+
+        /* PANELS AND CARDS */
+
+        .panel,
+        .card {
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            padding: 22px;
+            margin-bottom: 22px;
+            box-shadow: var(--shadow);
+            min-width: 0;
+        }
+
+        .panel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 10px;
-            color: var(--muted);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .panel-header p {
             font-size: 12px;
-        }
-
-        .stat-icon {
-            display: grid;
-            place-items: center;
-            width: 39px;
-            height: 39px;
-            border-radius: 11px;
-            background: var(--green-light);
-            font-size: 19px;
-        }
-
-        .stat-number {
-            margin-top: 15px;
-            font-size: 30px;
-            font-weight: 800;
-            color: var(--navy);
-        }
-
-        .stat-note {
             margin-top: 5px;
-            color: var(--muted);
-            font-size: 11px;
         }
 
-        /* =========================
-       FORMS
-    ========================= */
+        /* FORMS */
 
         .forms {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 20px;
-            margin-bottom: 25px;
-        }
-
-        .panel {
-            padding: 24px;
-            min-width: 0;
-        }
-
-        .panel-heading {
-            display: flex;
-            align-items: center;
-            gap: 11px;
-            margin-bottom: 22px;
-        }
-
-        .panel-heading .stat-icon {
-            flex-shrink: 0;
-        }
-
-        .panel-heading h2 {
-            margin: 0 0 4px;
+            align-items: start;
         }
 
         .field-grid {
@@ -992,228 +968,240 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
         }
 
         .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
             min-width: 0;
             margin-bottom: 15px;
         }
 
-        .field.full {
-            grid-column: 1 / -1;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 7px;
+        .field label {
+            color: var(--text);
             font-size: 12px;
             font-weight: 700;
-            color: #405166;
         }
 
+        .field input,
+        .field select,
+        .field textarea,
         input,
         select,
         textarea {
-            display: block;
             width: 100%;
-            min-width: 0;
-            padding: 11px 12px;
-            border: 1px solid #dce4eb;
+            min-height: 43px;
+            padding: 10px 12px;
+            border: 1px solid #dce5df;
             border-radius: 8px;
+            background: #ffffff;
+            color: var(--text);
+            font-size: 13px;
             outline: none;
-            color: var(--ink);
-            background: #fff;
+            transition: border 0.2s ease, box-shadow 0.2s ease;
         }
 
+        .field textarea,
+        textarea {
+            min-height: 95px;
+            resize: vertical;
+        }
+
+        .field input:focus,
+        .field select:focus,
+        .field textarea:focus,
         input:focus,
         select:focus,
         textarea:focus {
             border-color: var(--green);
-            box-shadow: 0 0 0 3px rgba(25, 135, 84, .1);
+            box-shadow: 0 0 0 3px rgba(35, 134, 91, 0.1);
         }
 
-        input[readonly] {
-            background: #f0f5f2;
-            color: var(--green-dark);
-            font-weight: 700;
+        .field input::placeholder,
+        .field textarea::placeholder,
+        input::placeholder,
+        textarea::placeholder {
+            color: #a2afa8;
         }
 
-        textarea {
-            min-height: 85px;
-            resize: vertical;
+        .field small {
+            color: var(--muted);
+            font-size: 11px;
         }
 
-        /* =========================
-       BUTTONS
-    ========================= */
+        /* BUTTONS */
 
-        .btn {
+        .btn,
+        button,
+        input[type="submit"] {
             display: inline-flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            padding: 11px 16px;
-            border: 0;
+            min-height: 41px;
+            padding: 10px 17px;
+            border: none;
             border-radius: 8px;
             background: var(--green);
-            color: white;
+            color: #ffffff;
             font-size: 12px;
-            font-weight: 800;
-            transition: .2s;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s ease;
         }
 
-        .btn:hover {
+        .btn:hover,
+        button:hover,
+        input[type="submit"]:hover {
             background: var(--green-dark);
+            transform: translateY(-1px);
         }
 
         .btn-secondary {
-            background: #edf2f6;
+            background: #eef4f0;
             color: var(--navy);
         }
 
         .btn-secondary:hover {
-            background: #dce5ed;
+            background: #dfece4;
+            color: var(--navy);
         }
 
-        .btn-block {
-            width: 100%;
+        .btn-danger {
+            background: #fff0ef;
+            color: #b42318;
         }
 
-        /* =========================
-       ALERTS
-    ========================= */
+        .btn-danger:hover {
+            background: #ffe0dd;
+        }
+
+        /* ALERTS AND MESSAGES */
 
         .alert {
-            padding: 14px 17px;
-            margin-bottom: 20px;
+            padding: 13px 16px;
             border-radius: 9px;
+            margin-bottom: 18px;
             font-size: 13px;
+            line-height: 1.5;
+            border: 1px solid transparent;
         }
 
-        .alert.success {
-            color: #17683b;
-            background: #e8f7ed;
-            border: 1px solid #c4ead0;
+        .alert-success,
+        .success {
+            background: #eaf7ef;
+            color: #176b46;
+            border-color: #c8ead5;
         }
 
-        .alert.error {
-            color: #9c2929;
+        .alert-error,
+        .error {
             background: #fff0ef;
-            border: 1px solid #f2ceca;
+            color: #b42318;
+            border-color: #ffd5d1;
         }
 
-        /* =========================
-       SECTIONS
-    ========================= */
-
-        .section {
-            margin-bottom: 25px;
+        .alert-warning,
+        .warning {
+            background: #fff8e6;
+            color: #946200;
+            border-color: #f5e2ad;
         }
 
-        .section-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-
-        .section-head h2 {
-            margin: 0;
-        }
-
-        /* =========================
-       FILTERS
-    ========================= */
-
-        .filters {
-            display: flex;
-            gap: 9px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .filters input {
-            width: 220px;
-        }
-
-        .filters select {
-            width: auto;
-            min-width: 155px;
-        }
-
-        /* =========================
-       TABLES
-    ========================= */
+        /* TABLES */
 
         .table-wrap {
             width: 100%;
             overflow-x: auto;
+            border: 1px solid var(--line);
             border-radius: 10px;
         }
 
         table {
             width: 100%;
+            min-width: 650px;
             border-collapse: collapse;
-            white-space: nowrap;
+            background: #ffffff;
+        }
+
+        thead {
+            background: #f5f8f6;
         }
 
         th {
             padding: 13px 15px;
             text-align: left;
-            background: #f8fafb;
-            color: #7b8998;
+            color: #65776d;
             font-size: 10px;
-            letter-spacing: .6px;
+            font-weight: 800;
+            letter-spacing: 0.7px;
             text-transform: uppercase;
+            border-bottom: 1px solid var(--line);
+            white-space: nowrap;
         }
 
         td {
             padding: 14px 15px;
-            border-top: 1px solid #edf0f3;
+            color: var(--text);
             font-size: 12px;
+            border-bottom: 1px solid #edf1ee;
+            vertical-align: middle;
         }
 
-        td strong {
-            color: var(--navy);
+        tbody tr:last-child td {
+            border-bottom: none;
         }
 
         tbody tr:hover {
-            background: #fafcfd;
+            background: #f8fbf9;
         }
 
-        /* =========================
-       STATUS BADGES
-    ========================= */
+        /* STATUS LABELS */
 
-        .status {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 20px;
+        .status,
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 10px;
+            border-radius: 30px;
             font-size: 10px;
             font-weight: 800;
+            white-space: nowrap;
         }
 
-        .status.under_treatment {
-            background: #fff0dc;
-            color: #9a5700;
+        .status.active,
+        .status.recovered,
+        .badge.success {
+            background: #e8f7ed;
+            color: #176b46;
         }
 
-        .status.ongoing {
-            background: #e5f0ff;
-            color: #2456a6;
+        .status.sick,
+        .status.ongoing,
+        .badge.danger {
+            background: #fff0ef;
+            color: #b42318;
         }
 
-        .status.recovered {
-            background: #e5f7eb;
-            color: #197343;
+        .status.pending,
+        .status.due,
+        .badge.warning {
+            background: #fff6df;
+            color: #946200;
         }
 
-        /* =========================
-       DUE ITEMS
-    ========================= */
+        .status.completed,
+        .status.normal,
+        .badge.info {
+            background: #eaf2ff;
+            color: #2458a6;
+        }
+
+        /* UPCOMING VACCINATIONS / DUE LIST */
 
         .due-list {
-            display: grid;
-            gap: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
         }
 
         .due-item {
@@ -1221,53 +1209,82 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             justify-content: space-between;
             align-items: center;
             gap: 15px;
-            padding: 13px;
+            padding: 14px;
+            background: #f8faf9;
             border: 1px solid var(--line);
             border-radius: 9px;
         }
 
         .due-item strong {
             display: block;
+            color: var(--navy);
             font-size: 12px;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
         }
 
-        .due-date {
-            color: var(--green-dark);
-            font-size: 11px;
-            font-weight: 800;
-        }
-
-        /* =========================
-       EMPTY STATES
-    ========================= */
-
-        .empty {
-            padding: 25px;
-            text-align: center;
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        /* =========================
-       FOOTER
-    ========================= */
-
-        .footer {
-            padding: 10px 0 25px;
-            text-align: center;
+        .due-item small {
             color: var(--muted);
             font-size: 11px;
         }
 
-        /* =========================
-       RESPONSIVE: TABLETS
-    ========================= */
+        /* EMPTY STATES */
+
+        .empty-state {
+            padding: 35px 20px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-state strong {
+            display: block;
+            color: var(--navy);
+            margin-bottom: 7px;
+        }
+
+        /* FILTERS AND SEARCH */
+
+        .filters,
+        .filter-row {
+            display: flex;
+            align-items: end;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .filters .field,
+        .filter-row .field {
+            flex: 1;
+            min-width: 160px;
+            margin-bottom: 0;
+        }
+
+        /* DIVIDERS */
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--line);
+            margin: 20px 0;
+        }
+
+        /* RESPONSIVE TABLETS */
 
         @media (max-width: 1100px) {
-            .sidebar {
+            .layout>.sidebar {
                 width: 220px;
-                min-width: 220px;
+            }
+
+            .layout>.main {
+                width: calc(100% - 220px);
+                margin-left: 220px;
+            }
+
+            .content {
+                padding: 25px 23px;
+            }
+
+            .topbar {
+                padding: 16px 23px;
             }
 
             .stats {
@@ -1279,119 +1296,126 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             }
         }
 
-        /* =========================
-       RESPONSIVE: MOBILE
-    ========================= */
+        /* RESPONSIVE MOBILE */
 
-        @media (max-width: 700px) {
+        @media (max-width: 760px) {
             .layout {
                 display: block;
             }
 
-            .sidebar {
+            .layout>.sidebar {
+                position: relative;
                 width: 100%;
-                min-width: 0;
+                height: auto;
                 min-height: auto;
                 padding: 15px;
+                overflow: visible;
             }
 
-            .brand {
-                padding-bottom: 15px;
+            .sidebar .brand {
+                padding-bottom: 13px;
             }
 
-            .nav-label {
-                padding-top: 10px;
+            .sidebar .nav-label {
+                padding-top: 8px;
             }
 
             .sidebar nav {
                 flex-direction: row;
                 flex-wrap: wrap;
-                gap: 5px;
+                gap: 6px;
             }
 
             .sidebar nav a {
-                display: inline-flex;
-                margin: 2px 0;
-                padding: 9px 10px;
+                padding: 9px 11px;
                 font-size: 11px;
             }
 
             .sidebar-bottom {
-                margin-top: 15px;
-                padding-top: 12px;
+                margin-top: 12px;
+                padding-top: 10px;
             }
 
             .user-chip {
-                padding: 8px;
+                padding-bottom: 8px;
+            }
+
+            .layout>.main {
+                width: 100%;
+                margin-left: 0;
             }
 
             .topbar {
-                padding: 15px;
+                position: relative;
+                min-height: 75px;
+                padding: 15px 18px;
+            }
+
+            .topbar h1 {
+                font-size: 19px;
             }
 
             .content {
-                padding: 18px 12px;
-            }
-
-            h1 {
-                font-size: 23px;
+                padding: 22px 16px;
             }
 
             .stats {
-                gap: 10px;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 11px;
             }
 
             .stat {
-                padding: 14px;
+                padding: 15px;
             }
 
-            .stat-number {
-                font-size: 25px;
+            .stat strong {
+                font-size: 24px;
             }
 
-            .panel {
-                padding: 16px;
+            .forms {
+                grid-template-columns: 1fr;
             }
 
             .field-grid {
                 grid-template-columns: 1fr;
+                gap: 0;
             }
 
-            .field.full {
-                grid-column: auto;
+            .panel {
+                padding: 17px;
             }
 
-            .filters,
-            .filters input,
-            .filters select {
-                width: 100%;
-            }
-
-            .due-item {
+            .page-heading {
                 align-items: flex-start;
+                flex-direction: column;
             }
         }
 
-        /* =========================
-       SMALL MOBILE SCREENS
-    ========================= */
+        /* SMALL MOBILE */
 
-        @media (max-width: 380px) {
+        @media (max-width: 420px) {
             .stats {
                 grid-template-columns: 1fr;
             }
 
-            .brand {
-                font-size: 17px;
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
             }
 
-            .sidebar nav a {
-                font-size: 10px;
-                padding: 8px;
+            .topbar .user-pill,
+            .topbar .topbar-right {
+                align-self: flex-start;
             }
 
-            .page-heading {
-                gap: 10px;
+            .due-item {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .panel-header {
+                align-items: flex-start;
+                flex-direction: column;
             }
         }
     </style>
@@ -1409,14 +1433,14 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
 
             <p class="nav-label">WORKSPACE</p>
             <nav>
-                <a class="active" href="index.php">▦ &nbsp; Dashboard</a>
+                <a href="index.php">▦ &nbsp; Dashboard</a>
 
                 <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
                     <a href="cows.php">♧ &nbsp; Cows & Records</a>
                     <a href="milk.php">◉ &nbsp; Milk Production</a>
                     <a href="search.php">⌕ &nbsp; serch cow</a>
 
-                    <a href="health.php">♡ &nbsp; Health & Vaccinations</a>
+                    <a class="active" href="health.php">♡ &nbsp; Health & Vaccinations</a>
                 <?php endif; ?>
 
 
@@ -1451,18 +1475,19 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
                 <a class="logout" href="logout.php">↪ &nbsp; Sign out</a>
             </div>
         </aside>
-
         <main class="main">
             <header class="topbar">
                 <div>
-                    <strong>Health & Vaccination</strong><br>
-                    <small>Animal wellness and medical records</small>
+                    <span class="eyebrow">DAIRY FARM MANAGEMENT</span>
+                    <h1>Health & Vaccination</h1>
                 </div>
+
                 <div class="user-pill">
-                    <div class="avatar"><?= e(strtoupper(substr($currentUser['full_name'], 0, 1))) ?></div>
-                    <div>
-                        <?= e($currentUser['full_name']) ?><br>
-                        <small><?= e(ucwords(str_replace('_', ' ', $role))) ?></small>
+                    <span class="status-dot"></span>
+                    System online
+
+                    <div class="avatar">
+                        <?= e(strtoupper(substr($currentUser['full_name'], 0, 1))) ?>
                     </div>
                 </div>
             </header>

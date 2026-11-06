@@ -585,6 +585,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 
+
     <style>
         :root {
             --navy: #102a25;
@@ -595,11 +596,11 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             --bg: #f5f8f6;
             --white: #ffffff;
             --text: #1c3029;
-            --muted: #78867f;
-            --border: #e5ece7;
+            --muted: #788b81;
+            --border: #e5ebe7;
             --red: #c34242;
             --amber: #b87913;
-            --shadow: 0 8px 28px rgba(16, 42, 37, .055);
+            --shadow: 0 12px 32px rgba(16, 42, 37, 0.055);
         }
 
         * {
@@ -633,18 +634,38 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             color: inherit;
         }
 
+        h1,
+        h2,
+        h3,
+        p {
+            margin-top: 0;
+        }
+
         /* =================================
        MAIN LAYOUT
     ================================= */
 
-        .layout {
+        .app-shell {
+            display: flex;
             min-height: 100vh;
+            width: 100%;
         }
 
-        .main {
-            margin-left: 248px;
-            padding: 31px 36px 45px;
+        .main-area {
+            width: calc(100% - 248px);
             min-width: 0;
+            min-height: 100vh;
+            margin-left: 248px;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+        }
+
+        .content {
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px 36px 40px;
         }
 
         /* =================================
@@ -653,21 +674,21 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
 
         .sidebar {
             width: 248px;
-            min-height: 100vh;
-            background: var(--navy);
-            color: white;
+            min-width: 248px;
+            height: 100vh;
             position: fixed;
-            inset: 0 auto 0 0;
-            padding: 25px 16px 18px;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            padding: 27px 17px;
             display: flex;
             flex-direction: column;
-            z-index: 100;
+            background: var(--navy);
+            color: white;
             overflow-y: auto;
             scrollbar-width: thin;
             scrollbar-color: #34574b transparent;
         }
-
-        /* BRAND */
 
         .brand {
             display: flex;
@@ -710,8 +731,6 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             font-weight: 600;
         }
 
-        /* NAVIGATION LABEL */
-
         .nav-label {
             color: #87a99a;
             font-size: 10px;
@@ -721,8 +740,6 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             margin: 0;
         }
 
-        /* NAVIGATION LINKS */
-
         .sidebar nav {
             display: flex;
             flex-direction: column;
@@ -731,7 +748,6 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
 
         .sidebar nav a {
             color: #c3d5cd;
-            text-decoration: none;
             display: flex;
             align-items: center;
             gap: 12px;
@@ -765,8 +781,6 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             padding-top: 22px;
             flex-shrink: 0;
         }
-
-        /* USER PROFILE */
 
         .user-chip {
             border-top: 1px solid #29463e;
@@ -805,11 +819,8 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             margin-top: 4px;
         }
 
-        /* CHANGE PASSWORD */
-
         .sidebar-bottom .nav-link {
             color: #c3d5cd;
-            text-decoration: none;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -831,11 +842,8 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             font-size: 16px;
         }
 
-        /* LOGOUT */
-
         .logout {
             color: #f2a9a9;
-            text-decoration: none;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -853,15 +861,18 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
         }
 
         /* =================================
-       TOPBAR
+       HEADER
     ================================= */
 
         .topbar {
+            min-height: 105px;
+            padding: 23px 36px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 18px;
-            margin-bottom: 27px;
         }
 
         .eyebrow {
@@ -871,13 +882,6 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             font-weight: 800;
             text-transform: uppercase;
             margin-bottom: 8px;
-        }
-
-        h1,
-        h2,
-        h3,
-        p {
-            margin-top: 0;
         }
 
         h1 {
@@ -918,8 +922,24 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             font-size: 12px;
         }
 
+        .top-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-left: auto;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
         .farm-select {
-            min-width: 180px;
+            width: 155px;
+            min-width: 155px;
+            height: 38px;
+            padding: 0 10px;
+            font-size: 12px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: #fff;
         }
 
         input:focus,
@@ -942,7 +962,6 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             font-weight: 700;
             font-size: 12px;
             cursor: pointer;
-            text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -1107,6 +1126,11 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
         .panel {
             padding: 22px;
             min-width: 0;
+            margin-bottom: 22px;
+        }
+
+        .content-grid .panel {
+            margin-bottom: 0;
         }
 
         .panel-header {
@@ -1294,6 +1318,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
     ================================= */
 
         .movement-pill {
+            display: inline-block;
             padding: 5px 8px;
             border-radius: 6px;
             font-size: 10px;
@@ -1339,6 +1364,8 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             color: var(--muted);
             font-size: 10px;
             margin-top: 5px;
+            white-space: normal;
+            max-width: 260px;
         }
 
         .amount-positive {
@@ -1371,7 +1398,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
         }
 
         /* =================================
-       TABLET RESPONSIVENESS
+       TABLET
     ================================= */
 
         @media (max-width: 1200px) {
@@ -1383,21 +1410,26 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
                 grid-template-columns: 1fr;
             }
 
-            .main {
+            .content {
                 padding: 27px 25px 40px;
             }
         }
 
         /* =================================
-       MOBILE RESPONSIVENESS
+       MOBILE
     ================================= */
 
         @media (max-width: 760px) {
+            .app-shell {
+                flex-direction: column;
+            }
+
             .sidebar {
                 position: relative;
                 width: 100%;
-                min-height: auto;
+                min-width: 100%;
                 height: auto;
+                min-height: auto;
                 padding: 15px;
                 overflow: visible;
             }
@@ -1431,14 +1463,15 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
                 padding: 12px 7px;
             }
 
-            .main {
+            .main-area {
+                width: 100%;
                 margin-left: 0;
-                padding: 22px 15px 30px;
             }
 
             .topbar {
-                align-items: flex-start;
-                flex-direction: column;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
             }
 
             .top-actions {
@@ -1453,6 +1486,10 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
 
             h1 {
                 font-size: 25px;
+            }
+
+            .content {
+                padding: 22px 15px 30px;
             }
 
             .welcome-banner {
@@ -1512,17 +1549,39 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
                 padding: 8px;
             }
 
-            .main {
+            .content {
                 padding-left: 12px;
                 padding-right: 12px;
             }
         }
+
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .top-actions {
+            margin-left: auto;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .farm-select {
+            width: 155px;
+            min-width: 155px;
+        }
     </style>
+
 
 </head>
 
 <body>
-    <div class="layout">
+    <div class="app-shell">
 
         <aside class="sidebar">
             <a href="index.php" class="brand">
@@ -1532,7 +1591,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
 
             <p class="nav-label">WORKSPACE</p>
             <nav>
-                <a class="active" href="index.php">▦ &nbsp; Dashboard</a>
+                <a href="index.php">▦ &nbsp; Dashboard</a>
 
                 <?php if (in_array($role, ['super_admin', 'admin', 'farm_manager'], true)): ?>
                     <a href="cows.php">♧ &nbsp; Cows & Records</a>
@@ -1544,7 +1603,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
 
 
                 <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
-                    <a href="feeds.php">🌾 &nbsp; Feed Inventory</a>
+                    <a class="active" href="feeds.php">🌾 &nbsp; Feed Inventory</a>
 
                 <?php endif; ?>
 
@@ -1561,9 +1620,9 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
 
             <div class="sidebar-bottom">
                 <div class="user-chip">
-                    <div class="avatar"><?= e(strtoupper(substr($_SESSION['full_name'], 0, 1))) ?></div>
+                    <div class="avatar"><?= e($initials) ?></div>
                     <div>
-                        <strong><?= e($_SESSION['full_name']) ?></strong>
+                        <strong><?= e($currentUser['full_name']) ?></strong>
                         <small><?= e(ucwords(str_replace('_', ' ', $role))) ?></small>
                     </div>
                 </div>
@@ -1575,7 +1634,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             </div>
         </aside>
 
-        <main class="main">
+        <main class="main-area">
 
             <header class="topbar">
                 <div>
@@ -1584,7 +1643,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
                     <p class="subtitle">Keep feed stock healthy, organised and ready for your herd.</p>
                 </div>
 
-                <div class="top-actions">
+                <div class="content">
                     <?php if ($isSuperAdmin && $farms): ?>
                         <form method="GET">
                             <select class="farm-select" name="farm_id" onchange="this.form.submit()">
