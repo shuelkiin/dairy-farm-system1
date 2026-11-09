@@ -814,6 +814,76 @@ $dashboardUrl = match ($role) {
                 grid-template-columns: 1fr;
             }
         }
+
+
+        /* MOBILE SIDEBAR MENU */
+        .mobile-menu-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            margin: 12px 0;
+            border: none;
+            border-radius: 9px;
+            background: var(--navy);
+            color: #fff;
+            font-size: 23px;
+            cursor: pointer;
+        }
+
+        .sidebar-overlay {
+            display: none;
+        }
+
+        @media (max-width: 760px) {
+            .app-shell>.sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 248px;
+                height: 100vh;
+                height: 100dvh;
+                z-index: 1001;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                overflow-y: auto;
+            }
+
+            .app-shell>.sidebar.active {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.45);
+                z-index: 1000;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease, visibility 0.3s ease;
+            }
+
+            .sidebar-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .app-shell>.main-area {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .topbar {
+                padding: 12px 15px;
+            }
+        }
     </style>
 </head>
 
@@ -864,8 +934,11 @@ $dashboardUrl = match ($role) {
                 <a class="logout" href="logout.php">↪ Sign out</a>
             </div>
         </aside>
-
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <main class="main-area">
+            <button type="button" class="mobile-menu-btn" id="mobileMenuBtn">
+                ☰
+            </button>
             <header class="topbar">
                 <div>
                     <span class="eyebrow">DAIRY FARM MANAGEMENT</span>
@@ -1102,6 +1175,40 @@ $dashboardUrl = match ($role) {
             </div>
         </main>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (!sidebar || !menuBtn || !overlay) return;
+
+            function openMenu() {
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+            }
+
+            function closeMenu() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+
+            menuBtn.addEventListener('click', function() {
+                sidebar.classList.contains('active') ? closeMenu() : openMenu();
+            });
+
+            overlay.addEventListener('click', closeMenu);
+
+            sidebar.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', closeMenu);
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') closeMenu();
+            });
+        });
+    </script>
 </body>
 
 </html>

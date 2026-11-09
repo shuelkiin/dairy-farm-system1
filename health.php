@@ -1298,46 +1298,68 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
 
         /* RESPONSIVE MOBILE */
 
+        .mobile-menu-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            margin: 12px 15px;
+            border: none;
+            border-radius: 9px;
+            background: var(--navy);
+            color: #ffffff;
+            font-size: 23px;
+            cursor: pointer;
+        }
+
+        .sidebar-overlay {
+            display: none;
+        }
+
         @media (max-width: 760px) {
             .layout {
                 display: block;
             }
 
             .layout>.sidebar {
-                position: relative;
-                width: 100%;
-                height: auto;
-                min-height: auto;
-                padding: 15px;
-                overflow: visible;
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 248px;
+                height: 100vh;
+                height: 100dvh;
+                min-height: 0;
+                padding: 20px 17px;
+                overflow-y: auto;
+                z-index: 1001;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
             }
 
-            .sidebar .brand {
-                padding-bottom: 13px;
+            .layout>.sidebar.active {
+                transform: translateX(0);
             }
 
-            .sidebar .nav-label {
-                padding-top: 8px;
+            .sidebar-overlay {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.45);
+                z-index: 1000;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease, visibility 0.3s ease;
             }
 
-            .sidebar nav {
-                flex-direction: row;
-                flex-wrap: wrap;
-                gap: 6px;
+            .sidebar-overlay.active {
+                opacity: 1;
+                visibility: visible;
             }
 
-            .sidebar nav a {
-                padding: 9px 11px;
-                font-size: 11px;
-            }
-
-            .sidebar-bottom {
-                margin-top: 12px;
-                padding-top: 10px;
-            }
-
-            .user-chip {
-                padding-bottom: 8px;
+            .mobile-menu-btn {
+                display: flex;
             }
 
             .layout>.main {
@@ -1607,7 +1629,11 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
                 <a class="logout" href="logout.php">↪ &nbsp; Sign out</a>
             </div>
         </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <main class="main">
+            <button type="button" class="mobile-menu-btn" id="mobileMenuBtn">
+                ☰
+            </button>
             <header class="topbar">
                 <div>
                     <span class="eyebrow">DAIRY FARM MANAGEMENT</span>
@@ -1977,6 +2003,40 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
             </div>
         </main>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (!sidebar || !menuBtn || !overlay) return;
+
+            function openMenu() {
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+            }
+
+            function closeMenu() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+
+            menuBtn.addEventListener('click', function() {
+                sidebar.classList.contains('active') ? closeMenu() : openMenu();
+            });
+
+            overlay.addEventListener('click', closeMenu);
+
+            sidebar.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', closeMenu);
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') closeMenu();
+            });
+        });
+    </script>
 </body>
 
 </html>

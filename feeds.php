@@ -586,6 +586,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
     <link rel="stylesheet" href="assets/style.css">
 
 
+
     <style>
         :root {
             --navy: #102a25;
@@ -641,9 +642,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             margin-top: 0;
         }
 
-        /* =================================
-       MAIN LAYOUT
-    ================================= */
+        /* MAIN LAYOUT */
 
         .app-shell {
             display: flex;
@@ -668,9 +667,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             padding: 30px 36px 40px;
         }
 
-        /* =================================
-       SIDEBAR
-    ================================= */
+        /* SIDEBAR */
 
         .sidebar {
             width: 248px;
@@ -679,7 +676,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 100;
+            z-index: 1001;
             padding: 27px 17px;
             display: flex;
             flex-direction: column;
@@ -772,9 +769,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             padding-left: 10px;
         }
 
-        /* =================================
-       SIDEBAR BOTTOM
-    ================================= */
+        /* SIDEBAR BOTTOM */
 
         .sidebar-bottom {
             margin-top: auto;
@@ -860,9 +855,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             color: #ff7777;
         }
 
-        /* =================================
-       HEADER
-    ================================= */
+        /* HEADER */
 
         .topbar {
             min-height: 105px;
@@ -899,13 +892,14 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
 
         .top-actions {
             display: flex;
-            gap: 10px;
             align-items: center;
+            justify-content: flex-end;
+            margin-left: auto;
+            gap: 10px;
+            flex-shrink: 0;
         }
 
-        /* =================================
-       INPUTS AND SELECTS
-    ================================= */
+        /* INPUTS AND SELECTS */
 
         .farm-select,
         .field input,
@@ -920,15 +914,6 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             color: var(--text);
             outline: none;
             font-size: 12px;
-        }
-
-        .top-actions {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            margin-left: auto;
-            gap: 10px;
-            flex-shrink: 0;
         }
 
         .farm-select {
@@ -949,9 +934,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             box-shadow: 0 0 0 3px rgba(35, 134, 91, .08);
         }
 
-        /* =================================
-       BUTTONS
-    ================================= */
+        /* BUTTONS */
 
         .btn {
             border: 0;
@@ -988,9 +971,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             padding: 13px;
         }
 
-        /* =================================
-       WELCOME BANNER
-    ================================= */
+        /* WELCOME BANNER */
 
         .welcome-banner {
             background: linear-gradient(110deg, #12392e, #21724d);
@@ -1042,9 +1023,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             z-index: 1;
         }
 
-        /* =================================
-       STATISTICS
-    ================================= */
+        /* STATISTICS */
 
         .stats {
             display: grid;
@@ -1111,9 +1090,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             margin-top: 5px;
         }
 
-        /* =================================
-       CONTENT GRID
-    ================================= */
+        /* CONTENT GRID */
 
         .content-grid {
             display: grid;
@@ -1162,9 +1139,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             flex-shrink: 0;
         }
 
-        /* =================================
-       FORMS
-    ================================= */
+        /* FORMS */
 
         .field {
             margin-bottom: 14px;
@@ -1196,9 +1171,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             margin: -3px 0 15px;
         }
 
-        /* =================================
-       ALERTS
-    ================================= */
+        /* ALERTS */
 
         .alert {
             padding: 13px 16px;
@@ -1220,9 +1193,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             border: 1px solid #f4cccc;
         }
 
-        /* =================================
-       INVENTORY
-    ================================= */
+        /* INVENTORY */
 
         .inventory-panel {
             margin-bottom: 22px;
@@ -1239,9 +1210,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             max-width: 270px;
         }
 
-        /* =================================
-       TABLES
-    ================================= */
+        /* TABLES */
 
         .table-wrap {
             width: 100%;
@@ -1289,9 +1258,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             margin-top: 4px;
         }
 
-        /* =================================
-       STOCK STATUS
-    ================================= */
+        /* STOCK STATUS */
 
         .stock-pill {
             display: inline-flex;
@@ -1313,9 +1280,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             color: #9b6410;
         }
 
-        /* =================================
-       MOVEMENT STATUS
-    ================================= */
+        /* MOVEMENT STATUS */
 
         .movement-pill {
             display: inline-block;
@@ -1340,9 +1305,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             color: #9b6410;
         }
 
-        /* =================================
-       EMPTY STATES
-    ================================= */
+        /* EMPTY STATES */
 
         .empty {
             text-align: center;
@@ -1356,9 +1319,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             margin-bottom: 10px;
         }
 
-        /* =================================
-       HISTORY
-    ================================= */
+        /* HISTORY */
 
         .history-meta {
             color: var(--muted);
@@ -1378,9 +1339,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             font-weight: 800;
         }
 
-        /* =================================
-       FOOTER
-    ================================= */
+        /* FOOTER */
 
         .footer {
             padding: 10px 0;
@@ -1389,17 +1348,28 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             color: #8b9991;
         }
 
-        /* =================================
-       MOBILE MENU
-    ================================= */
+        /* MOBILE MENU */
 
-        .mobile-menu {
+        .mobile-menu-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            margin: 12px 15px;
+            border: none;
+            border-radius: 9px;
+            background: var(--navy);
+            color: white;
+            font-size: 23px;
+            cursor: pointer;
+        }
+
+        .sidebar-overlay {
             display: none;
         }
 
-        /* =================================
-       TABLET
-    ================================= */
+        /* TABLET */
 
         @media (max-width: 1200px) {
             .stats {
@@ -1415,52 +1385,51 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             }
         }
 
-        /* =================================
-       MOBILE
-    ================================= */
+        /* MOBILE */
 
         @media (max-width: 760px) {
             .app-shell {
-                flex-direction: column;
+                display: block;
             }
 
-            .sidebar {
-                position: relative;
-                width: 100%;
-                min-width: 100%;
-                height: auto;
-                min-height: auto;
-                padding: 15px;
-                overflow: visible;
+            .app-shell>.sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 248px;
+                min-width: 248px;
+                height: 100vh;
+                height: 100dvh;
+                padding: 27px 17px;
+                overflow-y: auto;
+                z-index: 1001;
+                transform: translateX(-100%);
+                transition: transform .3s ease;
             }
 
-            .brand {
-                padding-bottom: 15px;
+            .app-shell>.sidebar.active {
+                transform: translateX(0);
             }
 
-            .nav-label {
-                padding: 10px 10px 8px;
+            .sidebar-overlay {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, .45);
+                z-index: 1000;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity .3s ease, visibility .3s ease;
             }
 
-            .sidebar nav {
-                flex-direction: row;
-                flex-wrap: wrap;
-                gap: 5px;
+            .sidebar-overlay.active {
+                opacity: 1;
+                visibility: visible;
             }
 
-            .sidebar nav a {
-                padding: 9px 10px;
-                margin: 2px 0;
-                font-size: 11px;
-            }
-
-            .sidebar-bottom {
-                margin-top: 15px;
-                padding-top: 12px;
-            }
-
-            .user-chip {
-                padding: 12px 7px;
+            .mobile-menu-btn {
+                display: flex;
             }
 
             .main-area {
@@ -1469,9 +1438,8 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             }
 
             .topbar {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
+                flex-wrap: wrap;
+                padding: 18px 15px;
             }
 
             .top-actions {
@@ -1531,9 +1499,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             }
         }
 
-        /* =================================
-       SMALL MOBILE SCREENS
-    ================================= */
+        /* SMALL MOBILE */
 
         @media (max-width: 380px) {
             .stats {
@@ -1544,11 +1510,6 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
                 font-size: 17px;
             }
 
-            .sidebar nav a {
-                font-size: 10px;
-                padding: 8px;
-            }
-
             .content {
                 padding-left: 12px;
                 padding-right: 12px;
@@ -1557,7 +1518,9 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
     </style>
 
 
+
 </head>
+
 
 <body>
     <div class="app-shell">
@@ -1612,8 +1575,11 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
                 <a class="logout" href="logout.php">↪ &nbsp; Sign out</a>
             </div>
         </aside>
-
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <main class="main-area">
+            <button type="button" class="mobile-menu-btn" id="mobileMenuBtn">
+                ☰
+            </button>
 
             <header class="topbar">
                 <div>
@@ -2051,6 +2017,42 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
         }
     </script>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (!sidebar || !menuBtn || !overlay) return;
+
+            function openMenu() {
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+            }
+
+            function closeMenu() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+
+            menuBtn.addEventListener('click', function() {
+                sidebar.classList.contains('active') ? closeMenu() : openMenu();
+            });
+
+            overlay.addEventListener('click', closeMenu);
+
+            sidebar.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', closeMenu);
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') closeMenu();
+            });
+        });
+    </script>
+
+
 </body>
+
 
 </html>

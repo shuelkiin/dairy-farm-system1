@@ -123,7 +123,6 @@ if (
     $endDate = date('Y-m-d');
 }
 
-$farmSql = '';
 $farmParams = [];
 
 if ($selectedFarm > 0) {
@@ -407,6 +406,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             top: 0;
             left: 0;
             width: 248px;
+            min-width: 248px;
             height: 100vh;
             background: var(--navy);
             color: #ffffff;
@@ -414,7 +414,8 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             display: flex;
             flex-direction: column;
             overflow-y: auto;
-            z-index: 1000;
+            z-index: 1001;
+            transition: transform 0.3s ease;
         }
 
         .brand {
@@ -554,6 +555,16 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
 
         .sidebar .logout:hover {
             background: rgba(220, 70, 70, 0.12);
+        }
+
+        /* MOBILE MENU BUTTON AND OVERLAY */
+
+        .mobile-menu-btn {
+            display: none;
+        }
+
+        .sidebar-overlay {
+            display: none;
         }
 
         /* TOPBAR */
@@ -924,9 +935,10 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
 
         /* TABLET */
 
-        @media (max-width: 1100px) {
+        @media (max-width: 1100px) and (min-width: 761px) {
             .sidebar {
                 width: 220px;
+                min-width: 220px;
             }
 
             .main {
@@ -957,36 +969,57 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             }
         }
 
-        /* MOBILE */
+        /* MOBILE SIDEBAR */
 
         @media (max-width: 760px) {
             .sidebar {
-                position: relative;
-                width: 100%;
-                height: auto;
-                min-height: auto;
-                padding: 15px;
-                overflow: visible;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 248px;
+                min-width: 248px;
+                height: 100vh;
+                min-height: 100vh;
+                padding: 20px 15px;
+                overflow-y: auto;
+                z-index: 1001;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
             }
 
-            .brand {
-                padding-bottom: 13px;
+            .sidebar.active {
+                transform: translateX(0);
             }
 
             .sidebar nav {
-                flex-direction: row;
-                flex-wrap: wrap;
-                gap: 5px;
+                flex-direction: column;
+                flex-wrap: nowrap;
             }
 
             .nav-link {
-                padding: 9px 11px;
-                font-size: 11px;
+                padding: 12px 13px;
+                font-size: 13px;
             }
 
             .sidebar-bottom {
-                margin-top: 12px;
-                padding-top: 10px;
+                margin-top: auto;
+                padding-top: 20px;
+            }
+
+            .sidebar-overlay {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.45);
+                z-index: 1000;
+                opacity: 0;
+                visibility: hidden;
+                transition: 0.3s ease;
+            }
+
+            .sidebar-overlay.active {
+                opacity: 1;
+                visibility: visible;
             }
 
             .main {
@@ -994,12 +1027,39 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
                 margin-left: 0;
             }
 
+            .mobile-menu-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                top: 13px;
+                left: 13px;
+                width: 42px;
+                height: 42px;
+                border: none;
+                border-radius: 9px;
+                background: var(--navy);
+                color: #ffffff;
+                font-size: 22px;
+                cursor: pointer;
+                z-index: 999;
+            }
+
             .topbar {
                 position: relative;
                 min-height: auto;
-                padding: 19px 17px;
+                padding: 22px 16px 20px 68px;
                 align-items: flex-start;
                 flex-direction: column;
+                gap: 15px;
+            }
+
+            .topbar h1 {
+                font-size: 21px;
+            }
+
+            .actions {
+                width: 100%;
             }
 
             .panel {
@@ -1033,15 +1093,15 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             }
 
             h1 {
-                font-size: 21px;
-            }
-
-            .actions {
-                width: 100%;
+                font-size: 20px;
             }
 
             .actions .btn {
                 width: 100%;
+            }
+
+            .panel {
+                padding: 14px;
             }
         }
 
@@ -1054,6 +1114,8 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             }
 
             .sidebar,
+            .sidebar-overlay,
+            .mobile-menu-btn,
             .no-print,
             .filter-panel,
             .footer {
@@ -1114,7 +1176,7 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             }
         }
     </style>
-</head>
+</head>>
 
 <body>
 
@@ -1168,8 +1230,11 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
             <a class="logout" href="logout.php">↪ &nbsp; Sign out</a>
         </div>
     </aside>
-
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <main class="main">
+        <button type="button" class="mobile-menu-btn" id="mobileMenuBtn">
+            ☰
+        </button>
         <header class="topbar">
             <div>
                 <div class="eyebrow">Insights & Performance</div>
@@ -1483,6 +1548,40 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
 
         <div class="footer">DairyFlow Farm Management System · Generated <?= e(date('d M Y, H:i')) ?></div>
     </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (!sidebar || !menuBtn || !overlay) return;
+
+            function openMenu() {
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+            }
+
+            function closeMenu() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+
+            menuBtn.addEventListener('click', function() {
+                sidebar.classList.contains('active') ? closeMenu() : openMenu();
+            });
+
+            overlay.addEventListener('click', closeMenu);
+
+            sidebar.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', closeMenu);
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') closeMenu();
+            });
+        });
+    </script>
 </body>
 
 </html>

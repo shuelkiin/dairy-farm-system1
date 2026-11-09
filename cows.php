@@ -927,8 +927,11 @@ function cowStatusClass(string $status): string
                 <a class="logout" href="logout.php">↪ &nbsp; Sign out</a>
             </div>
         </aside>
-
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <main class="main-content">
+            <button type="button" class="mobile-menu-btn" id="mobileMenuBtn">
+                ☰
+            </button>
             <div class="cow-page">
                 <h1>Cow Management 🐄</h1>
                 <p class="cow-muted">Register your herd and keep track of each animal.</p>
@@ -1391,6 +1394,34 @@ function cowStatusClass(string $status): string
             </div>
         </main>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const sidebar = document.querySelector('.sidebar');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (!sidebar || !menuBtn || !overlay) return;
+
+            menuBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+
+            sidebar.querySelectorAll('nav a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                });
+            });
+
+        });
+    </script>
 </body>
 
 </html>
