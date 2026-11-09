@@ -191,8 +191,6 @@ if ($currentRole === 'super_admin') {
             color: var(--text);
         }
 
-        /* MAIN LAYOUT */
-
         .app-shell {
             min-height: 100vh;
             display: flex;
@@ -212,7 +210,8 @@ if ($currentRole === 'super_admin') {
             padding: 27px 17px;
             display: flex;
             flex-direction: column;
-            z-index: 100;
+            z-index: 1001;
+            overflow-y: auto;
         }
 
         .brand {
@@ -334,12 +333,38 @@ if ($currentRole === 'super_admin') {
             color: #f0a6a6;
         }
 
+        /* MOBILE OVERLAY AND MENU BUTTON */
+
+        .sidebar-overlay {
+            display: none;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 13px;
+            left: 13px;
+            z-index: 999;
+            width: 43px;
+            height: 43px;
+            margin: 0;
+            padding: 0;
+            border: none;
+            border-radius: 9px;
+            background: var(--navy);
+            color: white;
+            font-size: 23px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
         /* MAIN CONTENT */
 
         .main-area {
             width: calc(100% - 248px);
             min-height: 100vh;
             margin-left: 248px;
+            min-width: 0;
         }
 
         .content {
@@ -348,7 +373,7 @@ if ($currentRole === 'super_admin') {
             padding: 30px 36px 40px;
         }
 
-        /* TOP HEADER */
+        /* HEADER */
 
         .header {
             background: var(--white);
@@ -358,6 +383,7 @@ if ($currentRole === 'super_admin') {
             align-items: center;
             justify-content: space-between;
             gap: 20px;
+            flex-wrap: wrap;
         }
 
         .header h1 {
@@ -372,13 +398,6 @@ if ($currentRole === 'super_admin') {
             margin: 0;
             color: var(--muted);
             font-size: 13px;
-        }
-
-        .eyebrow {
-            color: var(--green);
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 1.5px;
         }
 
         .back {
@@ -403,7 +422,7 @@ if ($currentRole === 'super_admin') {
             border: 1px solid var(--line);
             border-radius: 13px;
             padding: 25px;
-            margin-bottom: 23px;
+            margin: 25px 30px;
             box-shadow: var(--shadow);
         }
 
@@ -467,7 +486,7 @@ if ($currentRole === 'super_admin') {
             margin-top: 7px;
         }
 
-        button {
+        button[type="submit"] {
             display: inline-block;
             margin-top: 22px;
             padding: 12px 21px;
@@ -482,7 +501,7 @@ if ($currentRole === 'super_admin') {
             transition: 0.2s;
         }
 
-        button:hover {
+        button[type="submit"]:hover {
             background: var(--green-dark);
             transform: translateY(-1px);
         }
@@ -550,17 +569,24 @@ if ($currentRole === 'super_admin') {
             border-bottom: none;
         }
 
-        /* RESPONSIVE */
+        /* TABLET */
 
-        @media (max-width: 900px) {
-            .content {
-                padding: 25px 20px;
+        @media (max-width: 1100px) and (min-width: 761px) {
+            .main-area {
+                width: calc(100% - 248px);
             }
 
             .header {
                 padding: 20px;
             }
+
+            .panel {
+                margin: 20px;
+                padding: 20px;
+            }
         }
+
+        /* MOBILE */
 
         @media (max-width: 760px) {
             .app-shell {
@@ -568,19 +594,50 @@ if ($currentRole === 'super_admin') {
             }
 
             .sidebar {
-                position: relative;
-                width: 100%;
-                min-width: 100%;
-                height: auto;
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 248px;
+                min-width: 248px;
+                height: 100vh;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1001;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
             }
 
             .sidebar nav {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
             }
 
             .sidebar-bottom {
-                margin-top: 20px;
+                margin-top: auto;
+            }
+
+            .sidebar-overlay {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.45);
+                opacity: 0;
+                visibility: hidden;
+                transition: 0.3s ease;
+                z-index: 1000;
+            }
+
+            .sidebar-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .mobile-menu-btn {
+                display: block;
             }
 
             .main-area {
@@ -589,30 +646,39 @@ if ($currentRole === 'super_admin') {
             }
 
             .header {
+                padding: 75px 18px 20px;
                 align-items: flex-start;
                 flex-direction: column;
+                gap: 12px;
             }
-        }
 
-        @media (max-width: 550px) {
-            .content {
-                padding: 18px 13px;
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .panel {
+                margin: 18px 13px;
+                padding: 19px;
             }
 
             .form-grid {
                 grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .panel {
+                padding: 15px;
             }
 
-            .panel {
-                padding: 18px;
+            .header {
+                padding-left: 15px;
+                padding-right: 15px;
             }
 
             .header h1 {
-                font-size: 21px;
-            }
-
-            .sidebar nav {
-                grid-template-columns: 1fr;
+                font-size: 20px;
             }
         }
     </style>
@@ -682,7 +748,11 @@ if ($currentRole === 'super_admin') {
             </div>
 
         </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <main class="main-area">
+            <button type="button" class="mobile-menu-btn" id="mobileMenuBtn">
+                ☰
+            </button>
             <header class="header">
                 <h1>Manage Users</h1>
                 <p>
@@ -803,7 +873,43 @@ if ($currentRole === 'super_admin') {
                     </table>
                 </div>
             </section>
+        </main>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (!sidebar || !menuBtn || !overlay) return;
+
+            function openMenu() {
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+            }
+
+            function closeMenu() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+
+            menuBtn.addEventListener('click', function() {
+                sidebar.classList.contains('active') ? closeMenu() : openMenu();
+            });
+
+            overlay.addEventListener('click', closeMenu);
+
+            sidebar.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', closeMenu);
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') closeMenu();
+            });
+        });
+    </script>
+
 </body>
 
 </html>

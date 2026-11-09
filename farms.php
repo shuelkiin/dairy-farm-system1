@@ -141,6 +141,7 @@ try {
 
 
 
+
     <style>
         :root {
             --navy: #102a25;
@@ -172,8 +173,6 @@ try {
             color: var(--text);
         }
 
-        /* APPLICATION LAYOUT */
-
         .app-shell {
             display: flex;
             min-height: 100vh;
@@ -189,7 +188,7 @@ try {
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 100;
+            z-index: 1001;
             padding: 27px 17px;
             display: flex;
             flex-direction: column;
@@ -323,6 +322,31 @@ try {
             color: #f0a6a6;
         }
 
+        /* MOBILE MENU */
+
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 13px;
+            left: 13px;
+            z-index: 999;
+            width: 43px;
+            height: 43px;
+            margin: 0;
+            padding: 0;
+            border: none;
+            border-radius: 9px;
+            background: var(--navy);
+            color: white;
+            font-size: 23px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .sidebar-overlay {
+            display: none;
+        }
+
         /* MAIN AREA */
 
         .main-area {
@@ -334,7 +358,7 @@ try {
             flex-direction: column;
         }
 
-        /* PAGE HEADER */
+        /* HEADER */
 
         .header {
             width: 100%;
@@ -370,7 +394,7 @@ try {
             letter-spacing: 1.5px;
         }
 
-        /* PAGE CONTENT */
+        /* CONTENT */
 
         .content {
             width: 100%;
@@ -378,8 +402,6 @@ try {
             margin: 0 auto;
             padding: 30px 36px 40px;
         }
-
-        /* PANELS */
 
         .panel {
             width: 100%;
@@ -443,9 +465,9 @@ try {
             box-shadow: 0 0 0 3px rgba(35, 134, 91, 0.1);
         }
 
-        /* SUBMIT BUTTON */
+        /* BUTTON */
 
-        button {
+        button[type="submit"] {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -463,7 +485,7 @@ try {
             transition: 0.2s;
         }
 
-        button:hover {
+        button[type="submit"]:hover {
             background: var(--green-dark);
             transform: translateY(-1px);
         }
@@ -489,7 +511,7 @@ try {
             color: #a52b2b;
         }
 
-        /* FARMS TABLE */
+        /* TABLE */
 
         .table-wrap {
             width: 100%;
@@ -534,6 +556,8 @@ try {
             border-bottom: none;
         }
 
+        /* FARM STATUS */
+
         .status {
             display: inline-block;
             padding: 5px 11px;
@@ -543,79 +567,6 @@ try {
             font-size: 11px;
             font-weight: 700;
         }
-
-        /* RESPONSIVE */
-
-        @media (max-width: 1000px) {
-            .content {
-                padding: 25px 22px;
-            }
-
-            .header {
-                padding: 22px;
-            }
-        }
-
-        @media (max-width: 760px) {
-            .app-shell {
-                display: block;
-            }
-
-            .sidebar {
-                position: relative;
-                width: 100%;
-                min-width: 100%;
-                height: auto;
-                min-height: auto;
-            }
-
-            .sidebar nav {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .sidebar-bottom {
-                margin-top: 20px;
-            }
-
-            .main-area {
-                width: 100%;
-                margin-left: 0;
-            }
-
-            .header {
-                padding: 22px 18px;
-            }
-
-            .content {
-                padding: 20px 16px;
-            }
-        }
-
-        @media (max-width: 550px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .panel {
-                padding: 19px;
-            }
-
-            .header h1 {
-                font-size: 21px;
-            }
-
-            .sidebar nav {
-                grid-template-columns: 1fr;
-            }
-
-            .content {
-                padding: 16px 12px;
-            }
-        }
-
-
-
 
         .status-form {
             margin: 0;
@@ -644,7 +595,128 @@ try {
             background: white;
             color: var(--text);
         }
+
+        /* TABLET */
+
+        @media (max-width: 1100px) and (min-width: 761px) {
+            .content {
+                padding: 25px 22px;
+            }
+
+            .header {
+                padding: 22px;
+            }
+
+            .panel {
+                padding: 22px;
+            }
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 760px) {
+            .app-shell {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 248px;
+                min-width: 248px;
+                height: 100vh;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1001;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .sidebar nav {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .sidebar-bottom {
+                margin-top: auto;
+            }
+
+            .sidebar-overlay {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.45);
+                opacity: 0;
+                visibility: hidden;
+                transition: 0.3s ease;
+                z-index: 1000;
+            }
+
+            .sidebar-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .main-area {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .header {
+                min-height: auto;
+                padding: 75px 18px 20px;
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .content {
+                padding: 20px 16px;
+            }
+
+            .panel {
+                padding: 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .content {
+                padding: 16px 12px;
+            }
+
+            .panel {
+                padding: 16px;
+            }
+
+            .header {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+        }
     </style>
+
 
 
 </head>
@@ -712,7 +784,11 @@ try {
             </div>
 
         </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <main class="main-area">
+            <button type="button" class="mobile-menu-btn" id="mobileMenuBtn">
+                ☰
+            </button>
             <header class="header">
                 <h1>Manage Farms</h1>
                 <p>Register farms and manage your dairy farm locations.</p>
@@ -854,6 +930,42 @@ try {
                 </section>
 
             </div>
+
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const sidebar = document.querySelector('.sidebar');
+                    const menuBtn = document.getElementById('mobileMenuBtn');
+                    const overlay = document.getElementById('sidebarOverlay');
+
+                    if (!sidebar || !menuBtn || !overlay) return;
+
+                    function openMenu() {
+                        sidebar.classList.add('active');
+                        overlay.classList.add('active');
+                    }
+
+                    function closeMenu() {
+                        sidebar.classList.remove('active');
+                        overlay.classList.remove('active');
+                    }
+
+                    menuBtn.addEventListener('click', function() {
+                        sidebar.classList.contains('active') ? closeMenu() : openMenu();
+                    });
+
+                    overlay.addEventListener('click', closeMenu);
+
+                    sidebar.querySelectorAll('a').forEach(function(link) {
+                        link.addEventListener('click', closeMenu);
+                    });
+
+                    document.addEventListener('keydown', function(event) {
+                        if (event.key === 'Escape') closeMenu();
+                    });
+                });
+            </script>
+
 </body>
 
 </html>
