@@ -274,13 +274,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 font-size: 28px;
             }
         }
+
+
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .password-wrapper input {
+            padding-right: 65px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 14px;
+            border: none;
+            background: transparent;
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .toggle-password:hover {
+            color: var(--green-dark);
+        }
     </style>
 </head>
 
 <body class="login-page">
 
     <div class="login-card">
-        <div class="logo">DF</div>
+        <div class="logo">MF</div>
         <p class="eyebrow">DAIRY FARM MANAGEMENT</p>
         <h1>Welcome back.</h1>
         <p class="muted">Sign in to manage your farm operations.</p>
@@ -299,14 +325,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 autocomplete="username"
                 required>
 
+
             <label for="password">Password</label>
-            <input
-                id="password"
-                type="password"
-                name="password"
-                placeholder="Enter your password"
-                autocomplete="current-password"
-                required>
+
+            <div class="password-wrapper">
+                <input
+                    id="password"
+                    type="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                    required>
+
+                <button type="button" class="toggle-password" id="togglePassword">
+                    Show
+                </button>
+            </div>
+            <div style="text-align:right; margin-bottom:12px;">
+                <a href="forgot-password.php"
+                    style="color:#23865b; font-size:13px;
+       font-weight:700; text-decoration:none;">
+                    Forgot password?
+                </a>
+            </div>
 
             <button type="submit" class="btn">Sign in <span>→</span></button>
         </form>
@@ -315,7 +356,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Secure access with role-based permissions.
         </p>
     </div>
+    <script>
+        const passwordInput = document.getElementById('password');
+        const togglePassword = document.getElementById('togglePassword');
 
+        togglePassword.addEventListener('click', function() {
+            const isPassword = passwordInput.type === 'password';
+
+            passwordInput.type = isPassword ? 'text' : 'password';
+            togglePassword.textContent = isPassword ? 'Hide' : 'Show';
+        });
+    </script>
 </body>
 
 </html>

@@ -1138,9 +1138,9 @@ try {
 
         <aside class="sidebar">
             <div class="sidebar-brand">
-                <div class="sidebar-logo">DF</div>
+                <div class="sidebar-logo">MF</div>
                 <div>
-                    <h2>DairyFlow</h2>
+                    <h2>MwendAntu</h2>
                     <small>Farm Management System</small>
                 </div>
             </div>

@@ -1581,8 +1581,8 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
 
         <aside class="sidebar">
             <a href="index.php" class="brand">
-                <span class="logo small-logo">DF</span>
-                <span>DairyFlow<small>FARM MANAGEMENT</small></span>
+                <span class="logo small-logo">MF</span>
+                <span>MwendAntu<small>FARM MANAGEMENT</small></span>
             </a>
 
             <p class="nav-label">WORKSPACE</p>

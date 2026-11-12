@@ -727,9 +727,9 @@ try {
         <aside class="sidebar">
 
             <a href="index.php" class="brand">
-                <span class="logo small-logo">DF</span>
+                <span class="logo small-logo">MF</span>
                 <span>
-                    DairyFlow
+                    MwendAntu
                     <small>FARM MANAGEMENT</small>
                 </span>
             </a>

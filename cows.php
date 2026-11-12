@@ -435,6 +435,11 @@ function cowStatusClass(string $status): string
         default => ''
     };
 }
+function cowStatusLabel(string $status): string
+{
+    return $status === 'pregnant' ? 'In-calf' : ucfirst($status);
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -879,8 +884,8 @@ function cowStatusClass(string $status): string
 
         <aside class="sidebar">
             <a href="index.php" class="brand">
-                <span class="logo small-logo">DF</span>
-                <span>DairyFlow<small>FARM MANAGEMENT</small></span>
+                <span class="logo small-logo">MF</span>
+                <span>MwendAntu<small>FARM MANAGEMENT</small></span>
             </a>
 
             <p class="nav-label">WORKSPACE</p>
@@ -1061,9 +1066,9 @@ function cowStatusClass(string $status): string
 
 
                             <div class="cow-field">
-                                <label for="gender">Gender *</label>
+                                <label for="gender">Sex *</label>
                                 <select id="gender" name="gender" required>
-                                    <option value="">Select gender</option>
+                                    <option value="">Select Sex</option>
                                     <option value="female" <?= ($_POST['gender'] ?? '') === 'female' ? 'selected' : '' ?>>Female</option>
                                     <option value="male" <?= ($_POST['gender'] ?? '') === 'male' ? 'selected' : '' ?>>Male</option>
                                 </select>
@@ -1127,7 +1132,7 @@ function cowStatusClass(string $status): string
                                         <option
                                             value="<?= e($option) ?>"
                                             <?= ($_POST['status'] ?? 'active') === $option ? 'selected' : '' ?>>
-                                            <?= e(ucfirst($option)) ?>
+                                            <?= e(cowStatusLabel($option)) ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -1258,7 +1263,7 @@ function cowStatusClass(string $status): string
                                                             <option
                                                                 value="<?= e($option) ?>"
                                                                 <?= $cow['status'] === $option ? 'selected' : '' ?>>
-                                                                <?= e(ucfirst($option)) ?>
+                                                                <?= e(cowStatusLabel($option)) ?>
                                                             </option>
                                                         <?php endforeach; ?>
 
@@ -1344,10 +1349,12 @@ function cowStatusClass(string $status): string
                         updateMotherOptions();
                         updateMotherField();
 
+
                         // LIVE COW SEARCH
                         const cowSearch = document.getElementById('cowSearch');
                         const clearCowSearch = document.getElementById('clearCowSearch');
                         const searchResults = document.getElementById('searchResults');
+
                         const cowRows = Array.from(
                             document.querySelectorAll('.cow-table tbody tr')
                         );
@@ -1360,14 +1367,27 @@ function cowStatusClass(string $status): string
                             let visibleCount = 0;
 
                             cowRows.forEach(function(row) {
+
                                 // Ignore the empty-table message.
-                                if (row.cells.length === 1) {
+                                if (row.cells.length !== 7) {
                                     return;
                                 }
 
-                                const rowText = row.textContent.toLowerCase();
+                                // Search all cow columns, including the status dropdown.
+                                const searchableText = Array.from(row.cells)
+                                    .map(function(cell) {
+                                        const select = cell.querySelector('select');
 
-                                const matches = rowText.includes(searchValue);
+                                        if (select) {
+                                            return select.options[select.selectedIndex].text;
+                                        }
+
+                                        return cell.textContent;
+                                    })
+                                    .join(' ')
+                                    .toLowerCase();
+
+                                const matches = searchableText.includes(searchValue);
 
                                 row.style.display = matches ? '' : 'none';
 
@@ -1388,6 +1408,7 @@ function cowStatusClass(string $status): string
                             searchCows();
                             cowSearch.focus();
                         });
+
 
                     });
                 </script>

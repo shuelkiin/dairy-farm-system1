@@ -1,0 +1,32 @@
+
+# Gmail credentials and environment secrets
+/config/mail.php
+.env
+.env.*
+!.env.example
+
+# Composer dependencies
+/vendor/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows system files
+Thumbs.db
+Desktop.ini
+
+# IDE settings
+.idea/
+.vscode/
+
+# Temporary and log files
+*.log
+*.tmp
+
+# Backup files
+*.bak
+*.old
+*~
+/config/mailer.php

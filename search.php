@@ -181,14 +181,35 @@ try {
             FROM milk_production
             WHERE cow_id = ?
               AND farm_id = ?
-            ORDER BY production_date DESC, production_id DESC
-            LIMIT 100
+           ORDER BY production_date DESC, production_id DESC
         ");
         $stmt->execute([
             (int) $cow['cow_id'],
             (int) $cow['farm_id']
         ]);
         $milkRecords = $stmt->fetchAll();
+
+        // Prepare daily milk production chart data
+        $dailyMilk = [];
+
+        foreach ($milkRecords as $record) {
+            $date = $record['production_date'];
+
+            if (!isset($dailyMilk[$date])) {
+                $dailyMilk[$date] = 0;
+            }
+
+            $dailyMilk[$date] += (float) $record['quantity_litres'];
+        }
+
+        // Sort dates from oldest to newest
+        ksort($dailyMilk);
+
+        $chartLabels = array_keys($dailyMilk);
+        $chartValues = array_map(
+            fn($quantity) => round($quantity, 2),
+            array_values($dailyMilk)
+        );
     }
 } catch (Throwable $exception) {
     error_log('Cow search error: ' . $exception->getMessage());
@@ -885,14 +906,15 @@ $dashboardUrl = match ($role) {
             }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
     <div class="app-shell">
         <aside class="sidebar">
             <a href="<?= searchEscape($dashboardUrl) ?>" class="brand">
-                <span class="logo small-logo">DF</span>
-                <span>DairyFlow<small>FARM MANAGEMENT</small></span>
+                <span class="logo small-logo">MF</span>
+                <span>MwendAntu<small>FARM MANAGEMENT</small></span>
             </a>
             <p class="nav-label">WORKSPACE</p>
             <nav>
@@ -1140,6 +1162,24 @@ $dashboardUrl = match ($role) {
                             <?php endif; ?>
                         </section>
 
+
+
+                        <section class="record-panel">
+                            <h3>Milk Production Trend</h3>
+                            <p class="muted">
+                                Daily milk production from the first recorded milking date.
+                            </p>
+
+                            <?php if (!$milkRecords): ?>
+                                <p class="empty-state">No milk production data available for this cow.</p>
+                            <?php else: ?>
+                                <div style="position: relative; width: 100%; height: 350px;">
+                                    <canvas id="milkProductionChart"></canvas>
+                                </div>
+                            <?php endif; ?>
+                        </section>
+
+
                         <section class="record-panel">
                             <h3>Milk production history</h3>
                             <?php if (!$milkRecords): ?>
@@ -1208,6 +1248,68 @@ $dashboardUrl = match ($role) {
                 if (event.key === 'Escape') closeMenu();
             });
         });
+    </script>
+    <script>
+        const milkLabels = <?= json_encode($chartLabels) ?>;
+        const milkValues = <?= json_encode($chartValues) ?>;
+
+        const chartCanvas = document.getElementById('milkProductionChart');
+
+        if (chartCanvas) {
+            new Chart(chartCanvas, {
+                type: 'bar',
+
+                data: {
+                    labels: milkLabels,
+
+                    datasets: [{
+                        label: 'Milk Produced (Litres)',
+                        data: milkValues,
+                        backgroundColor: '#23865b',
+                        hoverBackgroundColor: '#176b46',
+                        borderRadius: 6,
+                        maxBarThickness: 45
+                    }]
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y.toFixed(2) + ' Litres';
+                                }
+                            }
+                        }
+                    },
+
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Milk Produced (Litres)'
+                            }
+                        },
+
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Production Date'
+                            }
+                        }
+                    }
+                }
+            });
+        }
     </script>
 </body>
 

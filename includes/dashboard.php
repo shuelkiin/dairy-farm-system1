@@ -40,7 +40,15 @@ if ($isSuperAdmin) {
                FROM milk_production mp
                WHERE mp.farm_id = f.farm_id
                AND mp.production_date = CURDATE()
-           ), 0) AS milk_today
+          ), 0) AS milk_today,
+
+(
+    SELECT COUNT(DISTINCT mp2.cow_id)
+    FROM milk_production mp2
+    WHERE mp2.farm_id = f.farm_id
+      AND mp2.production_date = CURDATE()
+      AND mp2.cow_id IS NOT NULL
+) AS milked_cows_today
     FROM farms f
     LEFT JOIN cows c ON c.farm_id = f.farm_id
     GROUP BY f.farm_id, f.farm_name, f.status
@@ -119,7 +127,16 @@ if ($isSuperAdmin) {
                 WHERE mp.farm_id = f.farm_id
                   AND mc.manager_id = :manager_milk
                   AND mp.production_date = CURDATE()
-            ), 0) AS milk_today
+          ), 0) AS milk_today,
+
+COALESCE((
+    SELECT COUNT(DISTINCT mp2.cow_id)
+    FROM milk_production mp2
+    INNER JOIN cows mc2 ON mc2.cow_id = mp2.cow_id
+    WHERE mp2.farm_id = f.farm_id
+      AND mc2.manager_id = :manager_milked
+      AND mp2.production_date = CURDATE()
+), 0) AS milked_cows_today
 
         FROM farms f
 
@@ -134,10 +151,10 @@ if ($isSuperAdmin) {
     ";
 
     $stmt = $pdo->prepare($farmSql);
-
     $stmt->execute([
         'manager_milk' => $managerId,
         'manager_cows' => $managerId,
+        'manager_milked' => $managerId,
         'farm' => $farmId ?: 0
     ]);
 
@@ -177,7 +194,15 @@ if ($isSuperAdmin) {
                    FROM milk_production mp
                    WHERE mp.farm_id = f.farm_id
                    AND mp.production_date = CURDATE()
-               ), 0) AS milk_today
+            ), 0) AS milk_today,
+
+(
+    SELECT COUNT(DISTINCT mp2.cow_id)
+    FROM milk_production mp2
+    WHERE mp2.farm_id = f.farm_id
+      AND mp2.production_date = CURDATE()
+      AND mp2.cow_id IS NOT NULL
+) AS milked_cows_today 
         FROM farms f
         LEFT JOIN cows c ON c.farm_id = f.farm_id
         WHERE f.farm_id = :farm
@@ -907,7 +932,7 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
 
         /* =========================================
    QUICK ACTIONS
-========================================= */
+========================================= 
 
         .quick-actions {
             display: grid;
@@ -971,7 +996,7 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
             color: var(--muted);
             font-size: 18px;
             font-weight: 400;
-        }
+        }*/
 
         /* =========================================
    EMPTY STATES
@@ -1177,8 +1202,8 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
 
         <aside class="sidebar">
             <a href="index.php" class="brand">
-                <span class="logo small-logo">DF</span>
-                <span>DairyFlow<small>FARM MANAGEMENT</small></span>
+                <span class="logo small-logo">MF</span>
+                <span>MwendAntu<small>FARM MANAGEMENT</small></span>
             </a>
 
             <p class="nav-label">WORKSPACE</p>
@@ -1293,125 +1318,101 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
                         </section>
                     </div>
                 <?php else: ?>
-                    <div class="section-grid">
-                        <section class="panel panel-wide">
-                            <div class="panel-heading">
-                                <div>
-                                    <h3><?= $isSuperAdmin ? 'Farm performance' : 'Farm overview' ?></h3>
-                                    <p class="muted">Cow counts and milk recorded today</p>
-                                </div>
-                                <a class="text-link" href="reports.php">View reports ↗</a>
-                            </div>
 
-                            <?php if (!$farms): ?>
-                                <div class="empty-state"><strong>No farm records yet</strong>
-                                    <p>Create a farm before registering cows and production.</p>
-                                </div>
-                            <?php else: ?>
-                                <div class="table-wrap">
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>FARM</th>
-                                                <th>COWS</th>
-                                                <th>MILK TODAY</th>
-                                                <th>STATUS</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach ($farms as $farm): ?>
 
-                                                <?php
-                                                $status = strtolower(trim($farm['status'] ?? 'inactive'));
 
-                                                $statusClass = $status === 'active'
-                                                    ? 'pill-green'
-                                                    : 'pill-red';
-                                                ?>
 
-                                                <tr>
-                                                    <td>
-                                                        <strong><?= e($farm['farm_name']) ?></strong>
-                                                    </td>
 
-                                                    <td>
-                                                        <?= number_format((int)$farm['cow_count']) ?>
-                                                    </td>
-
-                                                    <td>
-                                                        <?= number_format((float)$farm['milk_today'], 1) ?> L
-                                                    </td>
-
-                                                    <td>
-                                                        <span class="pill <?= $statusClass ?>">
-                                                            <?= e(ucfirst($status)) ?>
-                                                        </span>
-                                                    </td>
-                                                </tr>
-
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            <?php endif; ?>
-                        </section>
-
-                        <section class="panel">
-                            <div class="panel-heading">
-                                <div>
-                                    <h3>Quick actions</h3>
-                                    <p class="muted">Common daily tasks</p>
-                                </div>
-                            </div>
-                            <div class="quick-actions">
-                                <a href="cows.php"><span class="action-icon">♧</span><span><strong>Register a cow</strong><small>Add identification and breed</small></span><b>›</b></a>
-                                <a href="milk.php"><span class="action-icon">◉</span><span><strong>Record milk</strong><small>Log a milking session</small></span><b>›</b></a>
-                                <a href="health.php"><span class="action-icon">♡</span><span><strong>Health record</strong><small>Track health and vaccination</small></span><b>›</b></a>
-                                <?php if (in_array($role, ['super_admin', 'admin', 'store_manager'], true)): ?>
-                                    <a href="feeds.php"><span class="action-icon">🌾</span><span><strong>Feed Inventory</strong><small>Track inventory</small></span><b>›</b></a>
-
-                                <?php endif; ?>
-
-                                <a href="reports.php"><span class="action-icon">▥</span><span><strong>Reports</strong><small>View production summaries</small></span><b>›</b></a>
-                            </div>
-                        </section>
-                    </div>
                 <?php endif; ?>
 
 
-                <?php if ($role === 'admin'): ?>
-                    <section class="panel" style="margin-bottom: 24px;">
+                <section class="panel panel-wide" style="margin-bottom: 24px;">
+                    <div class="panel-heading">
+                        <div>
+                            <h3>Today's Farm Performance</h3>
+                            <p class="muted">Milk produced and cows milked today</p>
+                        </div>
+                    </div>
+
+                    <?php if (!$farms): ?>
+                        <div class="empty-state">
+                            <strong>No farm data available</strong>
+                            <p>Farm performance will appear here when records are available.</p>
+                        </div>
+                    <?php else: ?>
+                        <div style="position: relative; width: 100%; height: 340px;">
+                            <canvas id="farmPerformanceChart"></canvas>
+                        </div>
+                    <?php endif; ?>
+                </section>
+
+
+
+                <div class="section-grid">
+                    <section class="panel panel-wide">
                         <div class="panel-heading">
                             <div>
-                                <h3>Farm Manager Management</h3>
-                                <p class="muted">
-                                    Create and manage the staff responsible for your farm.
-                                </p>
+                                <h3><?= $isSuperAdmin ? 'Farm performance' : 'Farm overview' ?></h3>
+                                <p class="muted">Cow counts and milk recorded today</p>
                             </div>
-                            <span class="metric-icon green">♙</span>
+                            <a class="text-link" href="reports.php">View reports ↗</a>
                         </div>
 
-                        <div class="quick-actions">
-                            <a href="users.php">
-                                <span class="action-icon">＋</span>
-                                <span>
-                                    <strong>Add Farm Manager</strong>
-                                    <small>Create an account and assign it to your farm</small>
-                                </span>
-                                <b>›</b>
-                            </a>
+                        <?php if (!$farms): ?>
+                            <div class="empty-state"><strong>No farm records yet</strong>
+                                <p>Create a farm before registering cows and production.</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>FARM</th>
+                                            <th>COWS</th>
+                                            <th>MILK TODAY</th>
+                                            <th>STATUS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($farms as $farm): ?>
 
-                            <a href="users.php">
-                                <span class="action-icon">♙</span>
-                                <span>
-                                    <strong>View Farm Managers</strong>
-                                    <small>View the users assigned to your farm</small>
-                                </span>
-                                <b>›</b>
-                            </a>
-                        </div>
+                                            <?php
+                                            $status = strtolower(trim($farm['status'] ?? 'inactive'));
+
+                                            $statusClass = $status === 'active'
+                                                ? 'pill-green'
+                                                : 'pill-red';
+                                            ?>
+
+                                            <tr>
+                                                <td>
+                                                    <strong><?= e($farm['farm_name']) ?></strong>
+                                                </td>
+
+                                                <td>
+                                                    <?= number_format((int)$farm['cow_count']) ?>
+                                                </td>
+
+                                                <td>
+                                                    <?= number_format((float)$farm['milk_today'], 1) ?> L
+                                                </td>
+
+                                                <td>
+                                                    <span class="pill <?= $statusClass ?>">
+                                                        <?= e(ucfirst($status)) ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
+
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
                     </section>
-                <?php endif; ?>
+
+                </div>
+
 
 
 
@@ -1490,6 +1491,85 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
 
             document.addEventListener('keydown', function(event) {
                 if (event.key === 'Escape') closeMenu();
+            });
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const farmLabels = <?= json_encode(
+                                    array_column($farms, 'farm_name'),
+                                    JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
+                                ) ?>;
+
+            const milkValues = <?= json_encode(
+                                    array_map('floatval', array_column($farms, 'milk_today'))
+                                ) ?>;
+
+            const cowValues = <?= json_encode(
+                                    array_map('intval', array_column($farms, 'milked_cows_today'))
+                                ) ?>;
+
+            const canvas = document.getElementById('farmPerformanceChart');
+
+            if (!canvas) return;
+
+            new Chart(canvas, {
+                type: 'bar',
+
+                data: {
+                    labels: farmLabels,
+                    datasets: [{
+                            label: 'Milk produced (Litres)',
+                            data: milkValues,
+                            backgroundColor: '#23865b',
+                            borderRadius: 6,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Cows milked',
+                            data: cowValues,
+                            backgroundColor: '#183b33',
+                            borderRadius: 6,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Milk produced (Litres)'
+                            }
+                        },
+
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Number of cows milked'
+                            }
+                        }
+                    }
+                }
             });
         });
     </script>
