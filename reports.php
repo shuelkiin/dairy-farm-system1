@@ -56,6 +56,137 @@ function reportQuery(string $sql, array $params = []): array
     return $rows;
 }
 
+function reportExecute(string $sql, array $params = []): void
+{
+    global $db;
+
+    if ($db instanceof PDO) {
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return;
+    }
+
+    $stmt = $db->prepare($sql);
+
+    if (!$stmt) {
+        throw new RuntimeException('Unable to prepare database operation.');
+    }
+
+    if ($params) {
+        $types = str_repeat('s', count($params));
+        $refs = [];
+
+        foreach ($params as $key => $value) {
+            $refs[$key] = &$params[$key];
+        }
+
+        $stmt->bind_param($types, ...$refs);
+    }
+
+    $stmt->execute();
+    $stmt->close();
+}
+
+
+// ==========================================
+// SECURE CONSULTANT REPORT FILE VIEWER
+// ==========================================
+
+if (isset($_GET['consultant_file'])) {
+
+    $reportId = filter_var(
+        $_GET['consultant_file'],
+        FILTER_VALIDATE_INT
+    );
+
+    if (!$reportId || $reportId < 1) {
+        http_response_code(400);
+        exit('Invalid report ID.');
+    }
+
+    // Only admins and super admins may view consultant reports.
+    $viewer = reportQuery(
+        "SELECT u.user_id, u.farm_id, r.role_name
+         FROM users u
+         JOIN roles r ON r.role_id = u.role_id
+         WHERE u.user_id = ?
+         LIMIT 1",
+        [(int) $_SESSION['user_id']]
+    );
+
+    if (!$viewer || !in_array(
+        $viewer[0]['role_name'],
+        ['admin', 'super_admin'],
+        true
+    )) {
+        http_response_code(403);
+        exit('You are not allowed to view this file.');
+    }
+
+    $viewer = $viewer[0];
+
+    $fileParams = [$reportId];
+    $fileSql = "
+        SELECT cr.file_name, cr.file_type, cr.original_file_name
+        FROM consultant_reports cr
+        WHERE cr.report_id = ?
+    ";
+
+    if ($viewer['role_name'] !== 'super_admin') {
+        $fileSql .= " AND cr.farm_id = ?";
+        $fileParams[] = (int) $viewer['farm_id'];
+    }
+
+    $fileRows = reportQuery($fileSql, $fileParams);
+
+    if (!$fileRows) {
+        http_response_code(404);
+        exit('Consultant report not found.');
+    }
+
+    $file = $fileRows[0];
+
+    $allowedExtensions = [
+        'application/pdf' => 'pdf',
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png'
+    ];
+
+    if (!isset($allowedExtensions[$file['file_type']])) {
+        http_response_code(403);
+        exit('Unsupported file type.');
+    }
+
+    $expectedExtension = $allowedExtensions[$file['file_type']];
+
+    // Stored filenames are generated randomly during upload.
+    if (!preg_match(
+        '/^[a-f0-9]{40}\.' . preg_quote($expectedExtension, '/') . '$/',
+        $file['file_name']
+    )) {
+        http_response_code(403);
+        exit('Invalid stored filename.');
+    }
+
+    $filePath = __DIR__ . '/uploads/consultant_reports/' . $file['file_name'];
+
+    if (!is_file($filePath)) {
+        http_response_code(404);
+        exit('Attachment file not found.');
+    }
+
+    header('Content-Type: ' . $file['file_type']);
+    header('Content-Length: ' . filesize($filePath));
+    header('Content-Disposition: inline; filename="' . $expectedExtension . '"');
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: private, no-store');
+
+    readfile($filePath);
+    exit;
+}
+
+
+
 $userId = (int) $_SESSION['user_id'];
 
 $users = reportQuery(
@@ -102,10 +233,358 @@ $validFarmIds = array_map(
 $selectedFarm = $isSuperAdmin
     ? (int) ($_GET['farm_id'] ?? 0)
     : (int) $farmId;
+// CONSULTANT REPORTS
+$consultantSuccess = '';
+$consultantError = '';
 
+$canUploadConsultantReports = $role === 'admin';
+$canViewConsultantReports = in_array(
+    $role,
+    ['admin', 'super_admin'],
+    true
+);
+
+if (empty($_SESSION['consultant_report_csrf'])) {
+    $_SESSION['consultant_report_csrf'] = bin2hex(random_bytes(32));
+}
+
+// Handle consultant report upload.
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    ($_POST['action'] ?? '') === 'upload_consultant_report'
+) {
+    if (!$canUploadConsultantReports) {
+        http_response_code(403);
+        exit('You are not allowed to upload consultant reports.');
+    }
+
+    try {
+        if (
+            !hash_equals(
+                $_SESSION['consultant_report_csrf'],
+                $_POST['csrf_token'] ?? ''
+            )
+        ) {
+            throw new RuntimeException('Invalid form request. Refresh and try again.');
+        }
+
+        $consultantName = trim($_POST['consultant_name'] ?? '');
+        $reportDate = trim($_POST['report_date'] ?? '');
+        $comments = trim($_POST['comments'] ?? '');
+
+        if ($consultantName === '' || strlen($consultantName) > 150) {
+            throw new RuntimeException('Enter a valid consultant name.');
+        }
+
+        if (
+            !preg_match('/^\d{4}-\d{2}-\d{2}$/', $reportDate) ||
+            !checkdate(
+                (int) substr($reportDate, 5, 2),
+                (int) substr($reportDate, 8, 2),
+                (int) substr($reportDate, 0, 4)
+            )
+        ) {
+            throw new RuntimeException('Enter a valid report date.');
+        }
+
+        if (
+            !isset($_FILES['consultant_file']) ||
+            $_FILES['consultant_file']['error'] !== UPLOAD_ERR_OK
+        ) {
+            throw new RuntimeException('Please select a PDF or image to upload.');
+        }
+
+        $file = $_FILES['consultant_file'];
+
+        // Maximum upload size: 10 MB.
+        if ($file['size'] > 10 * 1024 * 1024) {
+            throw new RuntimeException('The file must not exceed 10 MB.');
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($file['tmp_name']);
+
+        $allowedTypes = [
+            'application/pdf' => 'pdf',
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png'
+        ];
+
+        if (!isset($allowedTypes[$mimeType])) {
+            throw new RuntimeException('Only PDF, JPG, JPEG and PNG files are allowed.');
+        }
+
+        $uploadDirectory = __DIR__ . '/uploads/consultant_reports/';
+
+        if (!is_dir($uploadDirectory) || !is_writable($uploadDirectory)) {
+            throw new RuntimeException('Consultant report upload folder is unavailable.');
+        }
+
+        $storedFileName = bin2hex(random_bytes(20))
+            . '.' . $allowedTypes[$mimeType];
+
+        $destination = $uploadDirectory . $storedFileName;
+
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            throw new RuntimeException('Unable to save the uploaded file.');
+        }
+
+        $originalFileName = basename($file['name']);
+
+        // Limit the stored original filename.
+        $originalFileName = substr($originalFileName, 0, 255);
+
+        try {
+            reportExecute(
+                "INSERT INTO consultant_reports
+                    (farm_id, consultant_name, report_date, comments,
+                     file_name, original_file_name, file_type, uploaded_by)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    $farmId,
+                    $consultantName,
+                    $reportDate,
+                    $comments,
+                    $storedFileName,
+                    $originalFileName,
+                    $mimeType,
+                    $userId
+                ]
+            );
+        } catch (Throwable $exception) {
+            if (is_file($destination)) {
+                unlink($destination);
+            }
+
+            throw $exception;
+        }
+
+        header('Location: reports.php?consultant_success=1');
+        exit;
+    } catch (Throwable $exception) {
+        $consultantError = $exception->getMessage();
+    }
+}
+
+if (isset($_GET['consultant_success'])) {
+    $consultantSuccess = 'Consultant report uploaded successfully.';
+}
+
+// Retrieve consultant reports.
+$consultantReports = [];
+
+if ($canViewConsultantReports) {
+    if ($isSuperAdmin) {
+        $consultantReports = $selectedFarm > 0
+            ? reportQuery(
+                "SELECT cr.*, f.farm_name, u.full_name AS uploaded_by_name
+                 FROM consultant_reports cr
+                 JOIN farms f ON f.farm_id = cr.farm_id
+                 JOIN users u ON u.user_id = cr.uploaded_by
+                 WHERE cr.farm_id = ?
+                 ORDER BY cr.report_date DESC, cr.report_id DESC",
+                [$selectedFarm]
+            )
+            : reportQuery(
+                "SELECT cr.*, f.farm_name, u.full_name AS uploaded_by_name
+                 FROM consultant_reports cr
+                 JOIN farms f ON f.farm_id = cr.farm_id
+                 JOIN users u ON u.user_id = cr.uploaded_by
+                 ORDER BY cr.report_date DESC, cr.report_id DESC"
+            );
+    } else {
+        $consultantReports = reportQuery(
+            "SELECT cr.*, f.farm_name, u.full_name AS uploaded_by_name
+             FROM consultant_reports cr
+             JOIN farms f ON f.farm_id = cr.farm_id
+             JOIN users u ON u.user_id = cr.uploaded_by
+             WHERE cr.farm_id = ?
+             ORDER BY cr.report_date DESC, cr.report_id DESC",
+            [$farmId]
+        );
+    }
+}
 if ($isSuperAdmin && !in_array($selectedFarm, [0, ...$validFarmIds], true)) {
     $selectedFarm = 0;
 }
+
+
+// ==========================================
+// CONSULTANT REPORTS
+// ==========================================
+
+$consultantSuccess = '';
+$consultantError = '';
+
+$canUploadConsultantReports = $role === 'admin';
+$canViewConsultantReports = in_array(
+    $role,
+    ['admin', 'super_admin'],
+    true
+);
+
+if (empty($_SESSION['consultant_report_csrf'])) {
+    $_SESSION['consultant_report_csrf'] = bin2hex(random_bytes(32));
+}
+
+// Handle consultant report upload.
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    ($_POST['action'] ?? '') === 'upload_consultant_report'
+) {
+    if (!$canUploadConsultantReports) {
+        http_response_code(403);
+        exit('You are not allowed to upload consultant reports.');
+    }
+
+    try {
+        if (
+            !hash_equals(
+                $_SESSION['consultant_report_csrf'],
+                $_POST['csrf_token'] ?? ''
+            )
+        ) {
+            throw new RuntimeException('Invalid form request. Refresh and try again.');
+        }
+
+        $consultantName = trim($_POST['consultant_name'] ?? '');
+        $reportDate = trim($_POST['report_date'] ?? '');
+        $comments = trim($_POST['comments'] ?? '');
+
+        if ($consultantName === '' || strlen($consultantName) > 150) {
+            throw new RuntimeException('Enter a valid consultant name.');
+        }
+
+        if (
+            !preg_match('/^\d{4}-\d{2}-\d{2}$/', $reportDate) ||
+            !checkdate(
+                (int) substr($reportDate, 5, 2),
+                (int) substr($reportDate, 8, 2),
+                (int) substr($reportDate, 0, 4)
+            )
+        ) {
+            throw new RuntimeException('Enter a valid report date.');
+        }
+
+        if (
+            !isset($_FILES['consultant_file']) ||
+            $_FILES['consultant_file']['error'] !== UPLOAD_ERR_OK
+        ) {
+            throw new RuntimeException('Please select a PDF or image to upload.');
+        }
+
+        $file = $_FILES['consultant_file'];
+
+        if ($file['size'] > 10 * 1024 * 1024) {
+            throw new RuntimeException('The file must not exceed 10 MB.');
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($file['tmp_name']);
+
+        $allowedTypes = [
+            'application/pdf' => 'pdf',
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png'
+        ];
+
+        if (!isset($allowedTypes[$mimeType])) {
+            throw new RuntimeException('Only PDF, JPG, JPEG and PNG files are allowed.');
+        }
+
+        if (!$farmId) {
+            throw new RuntimeException('Your account is not assigned to a farm.');
+        }
+
+        $uploadDirectory = __DIR__ . '/uploads/consultant_reports/';
+
+        if (!is_dir($uploadDirectory) || !is_writable($uploadDirectory)) {
+            throw new RuntimeException('Consultant report upload folder is unavailable.');
+        }
+
+        $storedFileName = bin2hex(random_bytes(20))
+            . '.' . $allowedTypes[$mimeType];
+
+        $destination = $uploadDirectory . $storedFileName;
+
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            throw new RuntimeException('Unable to save the uploaded file.');
+        }
+
+        $originalFileName = substr(basename($file['name']), 0, 255);
+
+        try {
+            reportExecute(
+                "INSERT INTO consultant_reports
+                    (farm_id, consultant_name, report_date, comments,
+                     file_name, original_file_name, file_type, uploaded_by)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    $farmId,
+                    $consultantName,
+                    $reportDate,
+                    $comments,
+                    $storedFileName,
+                    $originalFileName,
+                    $mimeType,
+                    $userId
+                ]
+            );
+        } catch (Throwable $exception) {
+            if (is_file($destination)) {
+                unlink($destination);
+            }
+
+            throw $exception;
+        }
+
+        header('Location: reports.php?consultant_success=1');
+        exit;
+    } catch (Throwable $exception) {
+        $consultantError = $exception->getMessage();
+    }
+}
+
+if (isset($_GET['consultant_success'])) {
+    $consultantSuccess = 'Consultant report uploaded successfully.';
+}
+
+// Retrieve consultant reports.
+$consultantReports = [];
+
+if ($canViewConsultantReports) {
+    if ($isSuperAdmin) {
+        $consultantReports = $selectedFarm > 0
+            ? reportQuery(
+                "SELECT cr.*, f.farm_name, u.full_name AS uploaded_by_name
+                 FROM consultant_reports cr
+                 JOIN farms f ON f.farm_id = cr.farm_id
+                 JOIN users u ON u.user_id = cr.uploaded_by
+                 WHERE cr.farm_id = ?
+                 ORDER BY cr.report_date DESC, cr.report_id DESC",
+                [$selectedFarm]
+            )
+            : reportQuery(
+                "SELECT cr.*, f.farm_name, u.full_name AS uploaded_by_name
+                 FROM consultant_reports cr
+                 JOIN farms f ON f.farm_id = cr.farm_id
+                 JOIN users u ON u.user_id = cr.uploaded_by
+                 ORDER BY cr.report_date DESC, cr.report_id DESC"
+            );
+    } else {
+        $consultantReports = reportQuery(
+            "SELECT cr.*, f.farm_name, u.full_name AS uploaded_by_name
+             FROM consultant_reports cr
+             JOIN farms f ON f.farm_id = cr.farm_id
+             JOIN users u ON u.user_id = cr.uploaded_by
+             WHERE cr.farm_id = ?
+             ORDER BY cr.report_date DESC, cr.report_id DESC",
+            [$farmId]
+        );
+    }
+}
+
+
 
 $startDate = (string) ($_GET['start_date'] ?? date('Y-m-01'));
 $endDate = (string) ($_GET['end_date'] ?? date('Y-m-d'));
@@ -1175,6 +1654,202 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
                 height: 130px;
             }
         }
+
+
+
+
+        /* CONSULTANT REPORTS */
+
+        .consultant-reports-panel {
+            margin-bottom: 25px;
+        }
+
+        .consultant-reports-panel .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .consultant-reports-panel .panel-header p {
+            color: #718078;
+            margin-top: 5px;
+            font-size: 13px;
+        }
+
+        .report-count {
+            background: #e9f7ef;
+            color: #176b46;
+            padding: 7px 13px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .consultant-upload-box {
+            background: #f8fbf9;
+            border: 1px solid #e1ebe5;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .consultant-upload-box h3,
+        .consultant-table-wrapper h3 {
+            color: #102a25;
+            font-size: 16px;
+            margin-bottom: 18px;
+        }
+
+        .consultant-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 17px;
+        }
+
+        .consultant-form-grid .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .consultant-form-grid .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .consultant-form-grid label {
+            color: #344b40;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .consultant-form-grid input,
+        .consultant-form-grid textarea {
+            width: 100%;
+            padding: 11px 13px;
+            border: 1px solid #dce6df;
+            border-radius: 8px;
+            background: #fff;
+            font: inherit;
+            color: #1c3029;
+        }
+
+        .consultant-form-grid input:focus,
+        .consultant-form-grid textarea:focus {
+            outline: none;
+            border-color: #23865b;
+            box-shadow: 0 0 0 3px rgba(35, 134, 91, .10);
+        }
+
+        .consultant-form-grid small {
+            color: #718078;
+            font-size: 12px;
+        }
+
+        .consultant-upload-btn {
+            margin-top: 18px;
+            background: #23865b;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 11px 18px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .consultant-upload-btn:hover {
+            background: #176b46;
+        }
+
+        .consultant-alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: 13px;
+        }
+
+        .consultant-alert.success {
+            background: #e9f7ef;
+            color: #176b46;
+        }
+
+        .consultant-alert.error {
+            background: #fff0f0;
+            color: #b42318;
+        }
+
+        .consultant-table-wrapper {
+            overflow: hidden;
+        }
+
+        .consultant-table-wrapper table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .consultant-table th,
+        .consultant-table td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #edf1ee;
+            text-align: left;
+            font-size: 13px;
+            vertical-align: top;
+        }
+
+        .consultant-table th {
+            background: #f5f8f6;
+            color: #52645a;
+            font-weight: 700;
+        }
+
+        .consultant-file-link {
+            color: #23865b;
+            text-decoration: none;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .consultant-file-link:hover {
+            text-decoration: underline;
+        }
+
+        .consultant-empty {
+            text-align: center;
+            padding: 35px 15px;
+            color: #718078;
+        }
+
+        .consultant-empty i {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .consultant-empty p {
+            margin-top: 8px;
+        }
+
+        .consultant-table .muted {
+            color: #9aa69f;
+        }
+
+        @media (max-width: 768px) {
+            .consultant-form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .consultant-form-grid .full-width {
+                grid-column: auto;
+            }
+
+            .consultant-table-wrapper {
+                overflow-x: auto;
+            }
+
+            .consultant-table {
+                min-width: 750px;
+            }
+        }
     </style>
 </head>>
 
@@ -1387,6 +2062,168 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
                 </table>
             </div>
         </section>
+
+
+        <?php if ($canViewConsultantReports): ?>
+            <section class="panel consultant-reports-panel">
+
+                <div class="panel-header">
+                    <div>
+                        <h2>Consultant Reports</h2>
+                        <p>Reports and recommendations submitted by farm consultants.</p>
+                    </div>
+                    <span class="report-count">
+                        <?= count($consultantReports) ?> Reports
+                    </span>
+                </div>
+
+                <?php if ($consultantSuccess): ?>
+                    <div class="consultant-alert success">
+                        <?= e($consultantSuccess) ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($consultantError): ?>
+                    <div class="consultant-alert error">
+                        <?= e($consultantError) ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($canUploadConsultantReports): ?>
+                    <div class="consultant-upload-box">
+                        <h3>Upload Consultant Report</h3>
+
+                        <form method="POST"
+                            action="reports.php"
+                            enctype="multipart/form-data">
+
+                            <input type="hidden" name="action"
+                                value="upload_consultant_report">
+
+                            <input type="hidden" name="csrf_token"
+                                value="<?= e($_SESSION['consultant_report_csrf']) ?>">
+
+                            <div class="consultant-form-grid">
+
+                                <div class="form-group">
+                                    <label for="consultant_name">Consultant Name</label>
+                                    <input type="text"
+                                        id="consultant_name"
+                                        name="consultant_name"
+                                        maxlength="150"
+                                        placeholder="Enter consultant name"
+                                        required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="report_date">Report Date</label>
+                                    <input type="date"
+                                        id="report_date"
+                                        name="report_date"
+                                        max="<?= date('Y-m-d') ?>"
+                                        required>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label for="comments">Comments</label>
+                                    <textarea id="comments"
+                                        name="comments"
+                                        rows="3"
+                                        placeholder="Enter report comments or observations..."></textarea>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label for="consultant_file">Attach Report (PDF or Image)</label>
+                                    <input type="file"
+                                        id="consultant_file"
+                                        name="consultant_file"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        required>
+                                    <small>Maximum file size: 10 MB. Accepted formats: PDF, JPG and PNG.</small>
+                                </div>
+
+                            </div>
+
+                            <button type="submit" class="consultant-upload-btn">
+                                <i class="fas fa-upload"></i>
+                                Upload Report
+                            </button>
+
+                        </form>
+                    </div>
+                <?php endif; ?>
+
+                <div class="consultant-table-wrapper">
+                    <h3>Uploaded Reports</h3>
+
+                    <?php if (empty($consultantReports)): ?>
+
+                        <div class="consultant-empty">
+                            <i class="fas fa-file-circle-xmark"></i>
+                            <p>No consultant reports have been uploaded yet.</p>
+                        </div>
+
+                    <?php else: ?>
+
+                        <table class="consultant-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <?php if ($isSuperAdmin): ?>
+                                        <th>Farm</th>
+                                    <?php endif; ?>
+                                    <th>Consultant</th>
+                                    <th>Report Date</th>
+                                    <th>Comments</th>
+                                    <th>Attachment</th>
+                                    <th>Uploaded By</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <?php foreach ($consultantReports as $index => $report): ?>
+                                    <tr>
+                                        <td><?= $index + 1 ?></td>
+
+                                        <?php if ($isSuperAdmin): ?>
+                                            <td><?= e($report['farm_name']) ?></td>
+                                        <?php endif; ?>
+
+                                        <td>
+                                            <strong><?= e($report['consultant_name']) ?></strong>
+                                        </td>
+
+                                        <td>
+                                            <?= e(date('d M Y', strtotime($report['report_date']))) ?>
+                                        </td>
+
+                                        <td>
+                                            <?= $report['comments']
+                                                ? nl2br(e($report['comments']))
+                                                : '<span class="muted">No comments</span>' ?>
+                                        </td>
+
+                                        <td>
+                                            <a class="consultant-file-link"
+                                                href="reports.php?consultant_file=<?= (int) $report['report_id'] ?>"
+                                                target="_blank">
+                                                <i class="fas fa-file-arrow-up"></i>
+                                                <?= e($report['original_file_name']) ?>
+                                            </a>
+                                        </td>
+
+                                        <td><?= e($report['uploaded_by_name']) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+
+                    <?php endif; ?>
+                </div>
+
+            </section>
+        <?php endif; ?>
+
 
         <section class="panel">
             <h2>Feed Stock Report</h2>

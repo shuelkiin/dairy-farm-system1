@@ -409,6 +409,72 @@ try {
     $errors[] = $e->getMessage();
 }
 ?>
+
+<?php
+// Export milk production records to CSV
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+
+    $filename = 'milk-production-records-' . date('Y-m-d') . '.csv';
+
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+    // Support Excel UTF-8
+    echo "\xEF\xBB\xBF";
+
+    $output = fopen('php://output', 'w');
+
+    // CSV headings
+    $headers = ['Date'];
+
+    if ($isSuperAdmin) {
+        $headers[] = 'Farm';
+    }
+
+    $headers = array_merge($headers, [
+        'Session',
+        'Cow',
+        'Quantity (Litres)',
+        'Recorded By',
+        'Notes'
+    ]);
+
+    fputcsv($output, $headers);
+
+    // Export records
+    foreach ($records as $record) {
+
+        $row = [
+            $record['production_date']
+        ];
+
+        if ($isSuperAdmin) {
+            $row[] = $record['farm_name'];
+        }
+
+        $cow = !empty($record['tag_number'])
+            ? $record['tag_number'] . (
+                !empty($record['cow_name'])
+                ? ' - ' . $record['cow_name']
+                : ''
+            )
+            : 'Bulk / unassigned';
+
+        $row = array_merge($row, [
+            ucfirst($record['milking_session']),
+            $cow,
+            $record['quantity_litres'],
+            $record['recorder'] ?? 'Unknown',
+            $record['notes'] ?? ''
+        ]);
+
+        fputcsv($output, $row);
+    }
+
+    fclose($output);
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -1127,6 +1193,74 @@ try {
                 margin-left: 0;
             }
         }
+
+
+        .milk-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .milk-card-header h2 {
+            margin-bottom: 5px;
+        }
+
+        .export-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 18px;
+            background: #176b46;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .export-btn:hover {
+            background: #125638;
+            color: #fff;
+        }
+
+        @media (max-width: 600px) {
+            .milk-card-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+
+
+        .export-button-container {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .export-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 20px;
+            background: #176b46;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .export-btn:hover {
+            background: #125638;
+        }
     </style>
 
 
@@ -1351,11 +1485,24 @@ try {
                 </form>
             </section>
 
-            <section class="milk-card">
-                <h2>Recent Milk Production</h2>
-                <p class="card-description">
-                    The most recent milk collection records.
-                </p>
+            <div class="export-button-container">
+                <button type="button" class="export-btn" onclick="printMilkRecords()">
+                    <i class="fas fa-print"></i>
+                    Print / Save PDF
+                </button>
+            </div>
+
+            <section class="milk-card" id="milkProductionPrint">
+                <div class="milk-card-header">
+                    <div>
+                        <h2>Recent Milk Production</h2>
+                        <p class="card-description">
+                            The most recent milk collection records.
+                        </p>
+                    </div>
+
+
+                </div>
 
                 <?php if (empty($records)): ?>
                     <div class="empty-state">
@@ -1471,6 +1618,99 @@ try {
             });
         });
     </script>
+
+
+    <script>
+        function printMilkRecords() {
+            const printContent = document.getElementById('milkProductionPrint');
+
+            if (!printContent) {
+                alert('Milk production records section not found.');
+                return;
+            }
+
+            const printWindow = window.open('', '_blank', 'width=1100,height=750');
+
+            printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>DairyFlow - Milk Production Records</title>
+
+            <style>
+                @page {
+                    size: landscape;
+                    margin: 12mm;
+                }
+
+                body {
+                    font-family: Arial, sans-serif;
+                    color: #1c3029;
+                    padding: 15px;
+                }
+
+                h2 {
+                    margin-bottom: 5px;
+                }
+
+                .card-description {
+                    color: #555;
+                    margin-bottom: 20px;
+                }
+
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 11px;
+                }
+
+                th, td {
+                    border: 1px solid #ccc;
+                    padding: 9px;
+                    text-align: left;
+                }
+
+                th {
+                    background: #e9f7ef !important;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+
+                tr {
+                    page-break-inside: avoid;
+                }
+
+                .session-badge {
+                    border: 1px solid #ccc;
+                    padding: 3px 6px;
+                }
+
+                @media print {
+                    body {
+                        padding: 0;
+                    }
+                }
+            </style>
+        </head>
+
+        <body>
+            ${printContent.innerHTML}
+        </body>
+        </html>
+    `);
+
+            printWindow.document.close();
+
+            printWindow.onload = function() {
+                printWindow.focus();
+                printWindow.print();
+                printWindow.onafterprint = function() {
+                    printWindow.close();
+                };
+            };
+        }
+    </script>
+
 </body>
 
 </html>

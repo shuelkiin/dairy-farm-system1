@@ -9,8 +9,7 @@ require_once __DIR__ . '/config/mailer.php';
 $error = '';
 $success = '';
 
-// Local project URL.
-// Change this when DairyFlow is deployed online.
+// Local project URL. Change when deployed online.
 $baseUrl = 'http://localhost/dairy-farm-system1';
 
 // Generate CSRF token.
@@ -33,32 +32,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Please enter a valid email address.';
     } else {
 
-        $stmt = $pdo->prepare("
-            SELECT user_id, full_name, email
-            FROM users
-            WHERE email = :email
-              AND status = 'active'
-            LIMIT 1
-        ");
+        try {
 
-        $stmt->execute(['email' => $email]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt = $pdo->prepare("
+                SELECT user_id, full_name, email
+                FROM users
+                WHERE email = :email
+                  AND status = 'active'
+                LIMIT 1
+            ");
 
-        if ($user) {
+            $stmt->execute(['email' => $email]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // Generate a secure random token.
-            $token = bin2hex(random_bytes(32));
+            if ($user) {
 
-            // Store only the token hash.
-            $tokenHash = hash('sha256', $token);
+                // Generate a secure random token.
+                $token = bin2hex(random_bytes(32));
 
-            // Token expires after 30 minutes.
-            $expiresAt = date(
-                'Y-m-d H:i:s',
-                time() + 1800
-            );
-
-            try {
+                // Store only the SHA-256 token hash.
+                $tokenHash = hash('sha256', $token);
 
                 $pdo->beginTransaction();
 
@@ -74,18 +67,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'user_id' => $user['user_id']
                 ]);
 
-                // Save the new token hash.
+                // Save token and let MySQL calculate expiry.
                 $insert = $pdo->prepare("
                     INSERT INTO password_resets
-                    (user_id, token_hash, expires_at)
+                    (
+                        user_id,
+                        token_hash,
+                        expires_at
+                    )
                     VALUES
-                    (:user_id, :token_hash, :expires_at)
+                    (
+                        :user_id,
+                        :token_hash,
+                        DATE_ADD(NOW(), INTERVAL 30 MINUTE)
+                    )
                 ");
 
                 $insert->execute([
                     'user_id' => $user['user_id'],
-                    'token_hash' => $tokenHash,
-                    'expires_at' => $expiresAt
+                    'token_hash' => $tokenHash
                 ]);
 
                 $pdo->commit();
@@ -107,23 +107,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'DairyFlow: Password reset email could not be delivered.'
                     );
                 }
-            } catch (Throwable $e) {
-
-                if ($pdo->inTransaction()) {
-                    $pdo->rollBack();
-                }
-
-                error_log(
-                    'DairyFlow password reset error: ' . $e->getMessage()
-                );
             }
+
+            // Same response whether account exists or not.
+            $success = 'If an active account exists with that email address, a password reset link will be sent shortly.';
+
+            // Rotate CSRF token.
+            $_SESSION['forgot_password_csrf'] = bin2hex(random_bytes(32));
+        } catch (Throwable $e) {
+
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            error_log(
+                'DairyFlow password reset error: ' . $e->getMessage()
+            );
+
+            $error = 'Something went wrong. Please try again later.';
         }
-
-        // Same response whether the account exists or not.
-        $success = 'If an active account exists with that email address, a password reset link will be sent shortly.';
-
-        // Rotate CSRF token.
-        $_SESSION['forgot_password_csrf'] = bin2hex(random_bytes(32));
     }
 }
 ?>
