@@ -76,17 +76,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         body.login-page {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 25px;
-            background:
-                radial-gradient(circle at top left, #d9f0e2 0%, transparent 38%),
-                radial-gradient(circle at bottom right, #dceee4 0%, transparent 35%),
-                var(--bg);
-            font-family: 'DM Sans', 'Segoe UI', sans-serif;
-            color: var(--text);
+            
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    font-family: Arial, sans-serif;
+
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.20), rgba(0, 0, 0, 0.20)),
+        url('./assets/images/bg.png');
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+
+
+            
         }
 
         /* Login Card */

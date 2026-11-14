@@ -108,16 +108,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            font-family: Arial, sans-serif;
-            background: #f1f5f2;
-            color: #172b25;
-        }
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    font-family: Arial, sans-serif;
+
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)),
+        url('assets/images/bg.png');
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+
+    color: #172b25;
+}
 
         .password-card {
             width: 100%;
@@ -211,6 +220,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-decoration: none;
             font-size: 14px;
         }
+        .password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-wrapper input {
+    padding-right: 75px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: auto;
+    margin: 0;
+    padding: 5px;
+    background: transparent;
+    color: #16834a;
+    border: none;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.toggle-password:hover {
+    background: transparent;
+    color: #10683a;
+}
     </style>
 </head>
 
@@ -238,36 +276,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
 
             <label for="current_password">Current password</label>
-            <input
-                type="password"
-                id="current_password"
-                name="current_password"
-                autocomplete="current-password"
-                required>
+            <div class="password-wrapper">
+                <input
+                    type="password"
+                    id="current_password"
+                    name="current_password"
+                    autocomplete="current-password"
+                    required>
+               <button type="button" class="toggle-password"
+    onclick="togglePassword('current_password', this)">Show</button>
+            </div>
 
             <label for="new_password">New password</label>
-            <input
-                type="password"
-                id="new_password"
-                name="new_password"
-                minlength="8"
-                autocomplete="new-password"
-                required>
+            <div class="password-wrapper">
+                <input
+                    type="password"
+                    id="new_password"
+                    name="new_password"
+                    minlength="8"
+                    autocomplete="new-password"
+                    required>
+                <button type="button" class="toggle-password"
+    onclick="togglePassword('new_password', this)">Show</button>
+            </div>
 
             <label for="confirm_password">Confirm new password</label>
-            <input
-                type="password"
-                id="confirm_password"
-                name="confirm_password"
-                minlength="8"
-                autocomplete="new-password"
-                required>
+            <div class="password-wrapper">
+                <input
+                    type="password"
+                    id="confirm_password"
+                    name="confirm_password"
+                    minlength="8"
+                    autocomplete="new-password"
+                    required>
+                <button type="button" class="toggle-password"
+    onclick="togglePassword('confirm_password', this)">Show</button>
+                 
+
+                 </button>
+                
+            </div>
 
             <button type="submit">Update Password</button>
         </form>
 
         <a class="back-link" href="index.php">← Back to dashboard</a>
     </main>
+
+<script>
+    function togglePassword(fieldId, button) {
+        const passwordField = document.getElementById(fieldId);
+
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            button.textContent = "Hide";
+        } else {
+            passwordField.type = "password";
+            button.textContent = "Show";
+        }
+    }
+</script>
 </body>
+
 
 </html>

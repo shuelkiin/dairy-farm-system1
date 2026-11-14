@@ -1305,25 +1305,13 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
 
                 </div>
 
-                <?php if ($role === 'store_manager'): ?>
-                    <div class="section-grid">
-                        <section class="panel panel-wide">
-                            <h3>Store manager workspace</h3>
-                            <p class="muted">Manage feed inventory, milk stock movements, calf allocations and inventory reports.</p>
-                            <div class="quick-actions">
-                                <a href="feeds.php"><span class="action-icon">▤</span><span><strong>Manage feed stock</strong><small>Record purchases and feed usage</small></span><b>›</b></a>
-                                <a href="milk.php"><span class="action-icon">◉</span><span><strong>Review milk records</strong><small>Check production and allocations</small></span><b>›</b></a>
-                                <a href="reports.php"><span class="action-icon">▥</span><span><strong>Inventory reports</strong><small>Review available stock and movements</small></span><b>›</b></a>
-                            </div>
-                        </section>
-                    </div>
-                <?php else: ?>
+               
 
 
 
 
 
-                <?php endif; ?>
+
 
 
                 <section class="panel panel-wide" style="margin-bottom: 24px;">
