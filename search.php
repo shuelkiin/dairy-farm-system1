@@ -986,11 +986,12 @@ $dashboardUrl = match ($role) {
                         <form class="search-form" method="get" action="search.php">
                             <input
                                 type="search"
+                                id="cowSearchInput"
                                 name="q"
                                 value="<?= searchEscape($q) ?>"
-                                placeholder="Enter cow name or tag number..."
+                                placeholder="Start typing a cow name or tag number..."
                                 aria-label="Cow name or tag number"
-                                required>
+                                autocomplete="off">
                             <button class="search-button" type="submit">Search cows</button>
                         </form>
                     </section>
@@ -1310,6 +1311,30 @@ $dashboardUrl = match ($role) {
                 }
             });
         }
+    </script>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('cowSearchInput');
+            const searchForm = document.querySelector('.search-form');
+
+            if (!searchInput || !searchForm) return;
+
+            let searchTimeout;
+
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+
+                searchTimeout = setTimeout(function() {
+                    const query = searchInput.value.trim();
+
+                    if (query.length >= 2 || query.length === 0) {
+                        searchForm.requestSubmit();
+                    }
+                }, 400);
+            });
+        });
     </script>
 </body>
 

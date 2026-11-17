@@ -137,6 +137,7 @@ if (!$userRows) {
 
 $currentUser = $userRows[0];
 $role = $currentUser['role_name'];
+$isSuperAdmin = ($role === 'super_admin');
 $userFarmId = $currentUser['farm_id'] === null
     ? null
     : (int) $currentUser['farm_id'];
@@ -488,7 +489,8 @@ if ($search !== '') {
 $healthRecords = dbAll(
     $db,
     "SELECT h.*, c.tag_number, c.cow_name, f.farm_name,
-            u.full_name AS recorder_name
+            u.full_name AS recorder_name,
+            h.veterinarian
             FROM health_records h
             JOIN cows c ON c.cow_id = h.cow_id
             JOIN farms f ON f.farm_id = c.farm_id
@@ -1877,6 +1879,7 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
                                     <th>Farm</th>
                                     <th>Condition</th>
                                     <th>Treatment</th>
+                                    <th>Veterinarian</th>
                                     <th>Record Date</th>
                                     <th>Next Checkup</th>
                                     <th>Status</th>
@@ -1885,7 +1888,7 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
                             <tbody>
                                 <?php if (!$healthRecords): ?>
                                     <tr>
-                                        <td colspan="7" class="empty">No health records found. Add your first record above.</td>
+                                        <td colspan="8" class="empty">No health records found. Add your first record above.</td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($healthRecords as $record): ?>
@@ -1904,6 +1907,7 @@ $filterUrl = $role === 'super_admin' && $selectedFarmId > 0
                                                 <?php endif; ?>
                                             </td>
                                             <td><?= e($record['treatment'] ?: 'Not recorded') ?></td>
+                                            <td><?= e($record['veterinarian'] ?: 'Not recorded') ?></td>
                                             <td><?= e($record['record_date']) ?></td>
                                             <td><?= e($record['next_checkup'] ?: 'Not scheduled') ?></td>
                                             <td>

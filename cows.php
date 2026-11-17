@@ -394,6 +394,65 @@ try {
     $cows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
+    // Automatically separate calves from adult cows.
+    // A calf is younger than 12 months.
+
+    $calves = [];
+    $registeredCows = [];
+
+    $today = new DateTimeImmutable('today');
+
+    foreach ($cows as $cow) {
+
+        $dob = $cow['date_of_birth'] ?? null;
+
+        // Missing or invalid DOB: retain the record without guessing.
+        $birthDate = $dob
+            ? DateTimeImmutable::createFromFormat('!Y-m-d', $dob)
+            : false;
+
+        if (
+            !$birthDate ||
+            $birthDate->format('Y-m-d') !== $dob ||
+            $birthDate > $today
+        ) {
+            $cow['age_months'] = null;
+            $cow['age_label'] = 'Not recorded';
+            $cow['age_search'] = 'not recorded';
+
+            $registeredCows[] = $cow;
+            continue;
+        }
+
+        $age = $birthDate->diff($today);
+
+        $ageMonths = ($age->y * 12) + $age->m;
+
+        if ($ageMonths < 1) {
+            $ageLabel = 'Under 1 month';
+        } elseif ($age->y > 0) {
+            $ageLabel = $age->y . ' years, ' . $age->m . ' months';
+        } else {
+            $ageLabel = $ageMonths . ' months';
+        }
+
+        $cow['age_months'] = $ageMonths;
+        $cow['age_label'] = $ageLabel;
+
+        // Include both age description and numerical months for searching.
+        $cow['age_search'] = strtolower(
+            $ageLabel . ' ' . $ageMonths . ' months'
+        );
+
+        $calfCutoff = $today->modify('-12 months');
+
+        if ($birthDate > $calfCutoff) {
+            $calves[] = $cow;
+        } else {
+            $registeredCows[] = $cow;
+        }
+    }
+
 
     // Load possible mothers from the permitted farm or farms.
     if ($isSuperAdmin) {
@@ -1151,11 +1210,199 @@ function cowStatusLabel(string $status): string
                         </form>
                     </section>
                 <?php endif; ?>
+
+
+                <!-- REGISTERED CALVES SECTION -->
+
+                <section class="cow-card">
+
+                    <h2>Registered Calves 🐮</h2>
+
+                    <p class="cow-muted">
+                        Total calves:
+                        <strong id="total-calves">
+                            <?= count($calves) ?>
+                        </strong>
+                    </p>
+
+                    <!-- AUTOMATIC CALF SEARCH -->
+
+                    <div class="cow-search-section">
+
+                        <div class="cow-search-box">
+
+                            <span class="search-icon">⌕</span>
+
+                            <input
+                                type="search"
+                                id="calfSearch"
+                                placeholder="Search calves by name or age..."
+                                autocomplete="off"
+                                aria-label="Search calves by name or age">
+
+                            <button
+                                type="button"
+                                id="clearCalfSearch"
+                                class="clear-search">
+                                Clear
+                            </button>
+
+                        </div>
+
+                        <p
+                            class="cow-muted search-results"
+                            id="calfSearchResults">
+
+                            Showing all <?= count($calves) ?> calves
+
+                        </p>
+
+                    </div>
+
+                    <!-- CALF RECORDS TABLE -->
+
+                    <div class="cow-table-wrap">
+
+                        <table class="cow-table">
+
+                            <thead>
+                                <tr>
+                                    <th>Tag Number</th>
+                                    <th>Name</th>
+                                    <th>Age</th>
+                                    <th>Breed</th>
+                                    <th>Gender</th>
+                                    <th>Date of Birth</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <?php if (empty($calves)): ?>
+
+                                    <tr>
+                                        <td colspan="7">
+                                            No calves registered yet.
+                                        </td>
+                                    </tr>
+
+                                <?php else: ?>
+
+                                    <?php foreach ($calves as $calf): ?>
+
+                                        <tr
+                                            class="calf-record-row"
+                                            data-search="<?= e(
+                                                                strtolower(
+                                                                    ($calf['cow_name'] ?? '') . ' ' .
+                                                                        $calf['age_label'] . ' ' .
+                                                                        $calf['age_search']
+                                                                )
+                                                            ) ?>">
+
+                                            <td>
+                                                <?= e($calf['tag_number']) ?>
+                                            </td>
+
+                                            <td>
+                                                <?= e($calf['cow_name'] ?: 'Unnamed') ?>
+                                            </td>
+
+                                            <td>
+                                                <span class="cow-status active">
+                                                    <?= e($calf['age_label']) ?>
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                <?= e($calf['breed'] ?: 'Not recorded') ?>
+                                            </td>
+
+                                            <td>
+                                                <?= e(ucfirst($calf['gender'])) ?>
+                                            </td>
+
+                                            <td>
+                                                <?= e($calf['date_of_birth']) ?>
+                                            </td>
+
+                                            <td>
+
+                                                <form
+                                                    method="POST"
+                                                    action="cows.php"
+                                                    class="cow-status-form">
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="csrf_token"
+                                                        value="<?= e($_SESSION['csrf_token']) ?>">
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="action"
+                                                        value="update_cow_status">
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="cow_id"
+                                                        value="<?= (int) $calf['cow_id'] ?>">
+
+                                                    <?php if ($isSuperAdmin && !empty($farmId)): ?>
+                                                        <input
+                                                            type="hidden"
+                                                            name="return_farm_id"
+                                                            value="<?= (int) $farmId ?>">
+                                                    <?php endif; ?>
+
+                                                    <select
+                                                        name="status"
+                                                        class="cow-status-select <?= e(cowStatusClass($calf['status'])) ?>"
+                                                        onchange="this.form.submit()"
+                                                        aria-label="Change calf status">
+
+                                                        <?php foreach ($allowedStatuses as $option): ?>
+
+                                                            <option
+                                                                value="<?= e($option) ?>"
+                                                                <?= $calf['status'] === $option ? 'selected' : '' ?>>
+
+                                                                <?= e(cowStatusLabel($option)) ?>
+
+                                                            </option>
+
+                                                        <?php endforeach; ?>
+
+                                                    </select>
+
+                                                </form>
+
+                                            </td>
+
+                                        </tr>
+
+                                    <?php endforeach; ?>
+
+                                <?php endif; ?>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+                <!-- END REGISTERED CALVES SECTION -->
+
+
+
                 <section class="cow-card">
                     <h2>Registered Cows</h2>
 
                     <p class="cow-muted">
-                        Total records: <span id="total-cows"><?= count($cows) ?></span>
+                        Total records: <span id="total-cows"><?= count($registeredCows) ?></span>
                     </p>
 
                     <!-- COW SEARCH -->
@@ -1181,7 +1428,7 @@ function cowStatusLabel(string $status): string
                     </div>
 
                     <div class="cow-table-wrap">
-                        <table class="cow-table">
+                        <table class="cow-table" id="registeredCowsTable">
                             <thead>
                                 <tr>
                                     <th>Tag Number</th>
@@ -1195,14 +1442,14 @@ function cowStatusLabel(string $status): string
                             </thead>
 
                             <tbody>
-                                <?php if (empty($cows)): ?>
+                                <?php if (empty($registeredCows)): ?>
                                     <tr>
                                         <td colspan="7">
                                             No cow records found.
                                         </td>
                                     </tr>
                                 <?php else: ?>
-                                    <?php foreach ($cows as $cow): ?>
+                                    <?php foreach ($registeredCows as $cow): ?>
                                         <tr>
                                             <td>
                                                 <?= e($cow['tag_number']) ?>
@@ -1318,9 +1565,15 @@ function cowStatusLabel(string $status): string
                         function updateMotherField() {
                             const isBornOnFarm = origin.value === 'born_on_farm';
 
+                            // Show mother selection only for farm-born cows.
                             motherSection.hidden = !isBornOnFarm;
-                            motherSearch.required = isBornOnFarm;
 
+                            // Activate or deactivate the mother fields.
+                            motherSearch.disabled = !isBornOnFarm;
+                            motherSearch.required = isBornOnFarm;
+                            motherId.disabled = !isBornOnFarm;
+
+                            // Clear previous selection when Acquired is selected.
                             if (!isBornOnFarm) {
                                 motherSearch.value = '';
                                 motherId.value = '';
@@ -1356,10 +1609,10 @@ function cowStatusLabel(string $status): string
                         const searchResults = document.getElementById('searchResults');
 
                         const cowRows = Array.from(
-                            document.querySelectorAll('.cow-table tbody tr')
+                            document.querySelectorAll('#registeredCowsTable tbody tr')
                         );
 
-                        const totalCows = <?= count($cows) ?>;
+                        const totalCows = <?= count($registeredCows) ?>;
 
                         function searchCows() {
                             const searchValue = cowSearch.value.trim().toLowerCase();
@@ -1411,6 +1664,47 @@ function cowStatusLabel(string $status): string
 
 
                     });
+
+                    // AUTOMATIC CALF SEARCH
+                    const calfSearch = document.getElementById('calfSearch');
+                    const clearCalfSearch = document.getElementById('clearCalfSearch');
+                    const calfSearchResults = document.getElementById('calfSearchResults');
+
+                    const calfRows = Array.from(
+                        document.querySelectorAll('.calf-record-row')
+                    );
+
+                    const totalCalves = <?= count($calves) ?>;
+
+                    function searchCalves() {
+                        const searchValue = calfSearch.value.trim().toLowerCase();
+                        let visibleCount = 0;
+
+                        calfRows.forEach(function(row) {
+                            const searchableText = row.dataset.search || '';
+                            const matches = searchableText.includes(searchValue);
+
+                            row.style.display = matches ? '' : 'none';
+
+                            if (matches) {
+                                visibleCount++;
+                            }
+                        });
+
+                        calfSearchResults.textContent = searchValue === '' ?
+                            `Showing all ${totalCalves} calves` :
+                            `Found ${visibleCount} of ${totalCalves} calves`;
+                    }
+
+                    if (calfSearch && clearCalfSearch && calfSearchResults) {
+                        calfSearch.addEventListener('input', searchCalves);
+
+                        clearCalfSearch.addEventListener('click', function() {
+                            calfSearch.value = '';
+                            searchCalves();
+                            calfSearch.focus();
+                        });
+                    }
                 </script>
             </div>
         </main>

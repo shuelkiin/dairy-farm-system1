@@ -715,6 +715,100 @@ try {
                 font-size: 20px;
             }
         }
+
+
+        /* TOPBAR */
+        .topbar {
+            width: 100%;
+            min-height: 85px;
+            padding: 18px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            border-bottom: 1px solid #e5ece8;
+            box-sizing: border-box;
+            gap: 20px;
+        }
+
+        .topbar .eyebrow {
+            display: block;
+            margin-bottom: 5px;
+            color: #23865b;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.8px;
+        }
+
+        .topbar h1 {
+            margin: 0;
+            color: #102a25;
+            font-family: 'Manrope', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #64746d;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            display: inline-block;
+            background: #22a06b;
+            border-radius: 50%;
+            box-shadow: 0 0 0 4px #e5f5ec;
+        }
+
+        .top-avatar {
+            width: 38px;
+            height: 38px;
+            margin-left: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #102a25;
+            color: #ffffff;
+            border: 2px solid #e5f5ec;
+            border-radius: 50%;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        /* MOBILE */
+        @media (max-width: 600px) {
+            .topbar {
+                min-height: 72px;
+                padding: 14px 16px;
+            }
+
+            .topbar h1 {
+                font-size: 19px;
+            }
+
+            .topbar .eyebrow {
+                font-size: 9px;
+            }
+
+            .topbar-right {
+                font-size: 11px;
+                gap: 7px;
+            }
+
+            .top-avatar {
+                width: 32px;
+                height: 32px;
+                margin-left: 4px;
+            }
+        }
     </style>
 
 
@@ -789,11 +883,15 @@ try {
             <button type="button" class="mobile-menu-btn" id="mobileMenuBtn">
                 ☰
             </button>
-            <header class="header">
-                <h1>Manage Farms</h1>
-                <p>Register farms and manage your dairy farm locations.</p>
-
-
+            <header class="topbar">
+                <div>
+                    <span class="eyebrow">DAIRY FARM MANAGEMENT</span>
+                    <h1><?= e($pageTitle) ?></h1>
+                </div>
+                <div class="topbar-right">
+                    <span class="status-dot"></span> System online
+                    <span class="top-avatar"><?= e(strtoupper(substr($_SESSION['full_name'], 0, 1))) ?></span>
+                </div>
             </header>
             <div class="content">
                 <section class="panel">

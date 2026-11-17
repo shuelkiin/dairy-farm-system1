@@ -156,23 +156,18 @@ try {
         }
 
         /*
-         * If a cow is selected, it MUST be active
-         * and belong to the selected farm.
-         *
-         * Leaving the cow empty records bulk milk.
-         */
+ * Validate the selected cow.
+ * Farm Managers can only record milk for their assigned adult cows.
+ * Admins and Super Admins can use any active adult cow
+ * belonging to the selected farm.
+ */
 
-        /*
-         * Validate the selected cow.
-         * Farm Managers can only record milk for their assigned cows.
-         * Admins and Super Admins can use any active cow
-         * belonging to the selected farm.
-         */
         $cowId = null;
 
         if ($selectedCow === '' && $role === 'farm_manager') {
             $errors[] = 'Please select one of your assigned cows.';
         } elseif ($selectedCow !== '') {
+
             $validatedCowId = filter_var(
                 $selectedCow,
                 FILTER_VALIDATE_INT
@@ -181,15 +176,20 @@ try {
             if (!$validatedCowId || $validatedCowId < 1) {
                 $errors[] = 'Please select a valid cow.';
             } else {
+
                 if ($role === 'farm_manager') {
                     $cowCheck = $pdo->prepare(
                         "SELECT cow_id
-                         FROM cows
-                         WHERE cow_id = ?
-                           AND farm_id = ?
-                           AND manager_id = ?
-                           AND status = 'active'
-                         LIMIT 1"
+                 FROM cows
+                 WHERE cow_id = ?
+                   AND farm_id = ?
+                   AND manager_id = ?
+                   AND status = 'active'
+                   AND (
+                       date_of_birth IS NULL
+                       OR date_of_birth <= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                   )
+                 LIMIT 1"
                     );
 
                     $cowCheck->execute([
@@ -200,27 +200,30 @@ try {
                 } else {
                     $cowCheck = $pdo->prepare(
                         "SELECT cow_id
-                         FROM cows
-                         WHERE cow_id = ?
-                           AND farm_id = ?
-                           AND status = 'active'
-                         LIMIT 1"
+                 FROM cows
+                 WHERE cow_id = ?
+                   AND farm_id = ?
+                   AND status = 'active'
+                   AND (
+                       date_of_birth IS NULL
+                       OR date_of_birth <= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                   )
+                 LIMIT 1"
                     );
 
                     $cowCheck->execute([
                         (int) $validatedCowId,
-                        $selectedFarmId
+                        (int) $selectedFarmId
                     ]);
                 }
 
                 if (!$cowCheck->fetch()) {
-                    $errors[] = 'The selected cow is not active or is not assigned to you.';
+                    $errors[] = 'The selected cow is not active, is a calf, or is not assigned to you.';
                 } else {
                     $cowId = (int) $validatedCowId;
                 }
             }
         }
-
 
         /*
          * Save the record only when validation succeeds.
@@ -266,6 +269,10 @@ try {
              WHERE farm_id = ?
                AND manager_id = ?
                AND status = 'active'
+               AND (
+                   date_of_birth IS NULL
+                   OR date_of_birth <= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+               )
              ORDER BY tag_number"
             );
 
@@ -279,6 +286,10 @@ try {
              FROM cows
              WHERE farm_id = ?
                AND status = 'active'
+               AND (
+                   date_of_birth IS NULL
+                   OR date_of_birth <= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+               )
              ORDER BY tag_number"
             );
 
