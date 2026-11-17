@@ -1565,15 +1565,9 @@ function cowStatusLabel(string $status): string
                         function updateMotherField() {
                             const isBornOnFarm = origin.value === 'born_on_farm';
 
-                            // Show mother selection only for farm-born cows.
                             motherSection.hidden = !isBornOnFarm;
-
-                            // Activate or deactivate the mother fields.
-                            motherSearch.disabled = !isBornOnFarm;
                             motherSearch.required = isBornOnFarm;
-                            motherId.disabled = !isBornOnFarm;
 
-                            // Clear previous selection when Acquired is selected.
                             if (!isBornOnFarm) {
                                 motherSearch.value = '';
                                 motherId.value = '';

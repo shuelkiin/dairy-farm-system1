@@ -137,7 +137,6 @@ if (!$userRows) {
 
 $currentUser = $userRows[0];
 $role = $currentUser['role_name'];
-$isSuperAdmin = ($role === 'super_admin');
 $userFarmId = $currentUser['farm_id'] === null
     ? null
     : (int) $currentUser['farm_id'];
