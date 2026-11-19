@@ -1726,6 +1726,35 @@ if ($selectedAttendanceUserId) {
         .activate-btn:hover {
             background: #ccebd7;
         }
+
+
+
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .password-wrapper input {
+            padding-right: 45px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #788b81;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .toggle-password:hover {
+            color: var(--green);
+        }
     </style>
 
 </head>
@@ -1864,14 +1893,26 @@ if ($selectedAttendanceUserId) {
 
                         <div class="field">
                             <label for="password">Temporary Password</label>
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                placeholder="Create a temporary password"
-                                required
-                                minlength="8"
-                                autocomplete="new-password">
+
+                            <div class="password-wrapper">
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    placeholder="Create a temporary password"
+                                    required
+                                    minlength="8"
+                                    autocomplete="new-password">
+
+                                <button
+                                    type="button"
+                                    class="toggle-password"
+                                    id="togglePassword"
+                                    aria-label="Show password">
+                                    👁
+                                </button>
+                            </div>
+
                             <small>Minimum 8 characters.</small>
                         </div>
 
@@ -2628,6 +2669,28 @@ if ($selectedAttendanceUserId) {
             });
         });
     </script>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('password');
+            const togglePassword = document.getElementById('togglePassword');
+
+            if (!passwordInput || !togglePassword) return;
+
+            togglePassword.addEventListener('click', function() {
+                const showPassword = passwordInput.type === 'password';
+
+                passwordInput.type = showPassword ? 'text' : 'password';
+                togglePassword.textContent = showPassword ? '🙈' : '👁';
+                togglePassword.setAttribute(
+                    'aria-label',
+                    showPassword ? 'Hide password' : 'Show password'
+                );
+            });
+        });
+    </script>
+
 </body>
 
 </html>
