@@ -44,6 +44,8 @@ $farms = [];
 $parents = [];
 $cows = [];
 $managers = [];
+$calves = [];
+$registeredCows = [];
 
 
 try {
@@ -396,9 +398,6 @@ try {
 
     // Automatically separate calves from adult cows.
     // A calf is younger than 12 months.
-
-    $calves = [];
-    $registeredCows = [];
 
     $today = new DateTimeImmutable('today');
 
