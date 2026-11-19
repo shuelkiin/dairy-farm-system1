@@ -1272,6 +1272,62 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
         .export-btn:hover {
             background: #125638;
         }
+
+
+        @media print {
+
+            body.printing-milk * {
+                visibility: hidden !important;
+            }
+
+            body.printing-milk #milkProductionPrint,
+            body.printing-milk #milkProductionPrint * {
+                visibility: visible !important;
+            }
+
+            body.printing-milk #milkProductionPrint {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 15px;
+                border: none;
+                box-shadow: none;
+            }
+
+            body.printing-milk .milk-table-wrap {
+                overflow: visible !important;
+            }
+
+            body.printing-milk .milk-table {
+                width: 100%;
+                min-width: 0;
+                border-collapse: collapse;
+            }
+
+            body.printing-milk .milk-table th,
+            body.printing-milk .milk-table td {
+                border: 1px solid #ccc;
+                padding: 9px;
+                color: #1c3029 !important;
+            }
+
+            body.printing-milk .milk-table th {
+                background: #e9f7ef !important;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            body.printing-milk tr {
+                break-inside: avoid;
+            }
+
+            @page {
+                size: landscape;
+                margin: 12mm;
+            }
+        }
     </style>
 
 
@@ -1631,6 +1687,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     </script>
 
 
+
     <script>
         function printMilkRecords() {
             const printContent = document.getElementById('milkProductionPrint');
@@ -1640,87 +1697,17 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
                 return;
             }
 
-            const printWindow = window.open('', '_blank', 'width=1100,height=750');
+            document.body.classList.add('printing-milk');
 
-            printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>DairyFlow - Milk Production Records</title>
+            window.print();
 
-            <style>
-                @page {
-                    size: landscape;
-                    margin: 12mm;
-                }
-
-                body {
-                    font-family: Arial, sans-serif;
-                    color: #1c3029;
-                    padding: 15px;
-                }
-
-                h2 {
-                    margin-bottom: 5px;
-                }
-
-                .card-description {
-                    color: #555;
-                    margin-bottom: 20px;
-                }
-
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 11px;
-                }
-
-                th, td {
-                    border: 1px solid #ccc;
-                    padding: 9px;
-                    text-align: left;
-                }
-
-                th {
-                    background: #e9f7ef !important;
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-
-                tr {
-                    page-break-inside: avoid;
-                }
-
-                .session-badge {
-                    border: 1px solid #ccc;
-                    padding: 3px 6px;
-                }
-
-                @media print {
-                    body {
-                        padding: 0;
-                    }
-                }
-            </style>
-        </head>
-
-        <body>
-            ${printContent.innerHTML}
-        </body>
-        </html>
-    `);
-
-            printWindow.document.close();
-
-            printWindow.onload = function() {
-                printWindow.focus();
-                printWindow.print();
-                printWindow.onafterprint = function() {
-                    printWindow.close();
-                };
-            };
+            window.addEventListener('afterprint', function restorePage() {
+                document.body.classList.remove('printing-milk');
+                window.removeEventListener('afterprint', restorePage);
+            });
         }
     </script>
+
 
 </body>
 

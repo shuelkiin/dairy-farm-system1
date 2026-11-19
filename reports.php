@@ -1850,6 +1850,35 @@ $roleLabel = ucwords(str_replace('_', ' ', $role));
                 min-width: 750px;
             }
         }
+
+
+
+
+        /* FIX MILK TREND BARS WHEN PRINTING */
+        @media print {
+            .chart {
+                height: 175px !important;
+                overflow: visible !important;
+            }
+
+            .bar-item {
+                flex-shrink: 0 !important;
+            }
+
+            .bar {
+                display: block !important;
+                flex-shrink: 0 !important;
+                background: #23865b !important;
+                border: 1px solid #176b46 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .bar-value,
+            .bar-date {
+                color: #333 !important;
+            }
+        }
     </style>
 </head>>
 
