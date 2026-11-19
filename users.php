@@ -131,6 +131,104 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
+
+// ========================================
+// ACTIVATE / DEACTIVATE USERS
+// ========================================
+
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    ($_POST['action'] ?? '') === 'toggle_user_status'
+) {
+    try {
+        if (!hash_equals(
+            $_SESSION['csrf_token'],
+            $_POST['csrf_token'] ?? ''
+        )) {
+            throw new RuntimeException('Security check failed. Refresh the page.');
+        }
+
+        $targetUserId = filter_var(
+            $_POST['user_id'] ?? '',
+            FILTER_VALIDATE_INT
+        );
+
+        $newStatus = $_POST['new_status'] ?? '';
+
+        if (!$targetUserId || !in_array($newStatus, ['active', 'inactive'], true)) {
+            throw new RuntimeException('Invalid user or status.');
+        }
+
+        // Prevent users from changing their own account status.
+        if ((int)$targetUserId === (int)$_SESSION['user_id']) {
+            throw new RuntimeException('You cannot change your own account status.');
+        }
+
+        // Fetch the target user and their role.
+        $targetQuery = $pdo->prepare("
+            SELECT u.user_id, u.farm_id, u.status, r.role_name
+            FROM users u
+            JOIN roles r ON r.role_id = u.role_id
+            WHERE u.user_id = :user_id
+            LIMIT 1
+        ");
+
+        $targetQuery->execute([
+            'user_id' => $targetUserId
+        ]);
+
+        $targetUser = $targetQuery->fetch(PDO::FETCH_ASSOC);
+
+        if (!$targetUser) {
+            throw new RuntimeException('User not found.');
+        }
+
+        // SUPER ADMIN: Can manage any other user.
+        if ($currentRole === 'super_admin') {
+            // No additional farm restriction.
+        }
+
+        // FARM ADMIN: Can only manage farm managers in their own farm.
+        elseif ($currentRole === 'admin') {
+
+            if (
+                $targetUser['role_name'] !== 'farm_manager' ||
+                (int)$targetUser['farm_id'] !== (int)$currentFarmId
+            ) {
+                throw new RuntimeException(
+                    'You can only manage farm managers assigned to your farm.'
+                );
+            }
+        } else {
+            throw new RuntimeException('You are not allowed to perform this action.');
+        }
+
+        // Update the account status.
+        $updateStatus = $pdo->prepare("
+            UPDATE users
+            SET status = :status
+            WHERE user_id = :user_id
+        ");
+
+        $updateStatus->execute([
+            'status' => $newStatus,
+            'user_id' => $targetUserId
+        ]);
+
+        $message = $newStatus === 'inactive'
+            ? 'User account deactivated successfully.'
+            : 'User account activated successfully.';
+
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    } catch (RuntimeException $exception) {
+        $error = $exception->getMessage();
+    } catch (PDOException $exception) {
+        error_log($exception->getMessage());
+        $error = 'Could not update the user status. Please try again.';
+    }
+}
+
+
 // Automatically initialize today's attendance.
 $today = date('Y-m-d');
 
@@ -1582,6 +1680,52 @@ if ($selectedAttendanceUserId) {
                 align-self: flex-end;
             }
         }
+
+        .user-status {
+            display: inline-block;
+            padding: 6px 11px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .user-status.active {
+            background: #e7f7ed;
+            color: #176b46;
+        }
+
+        .user-status.inactive {
+            background: #fff0f0;
+            color: #b42318;
+        }
+
+        .status-action {
+            border: none;
+            border-radius: 7px;
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .deactivate-btn {
+            background: #fff0f0;
+            color: #b42318;
+        }
+
+        .deactivate-btn:hover {
+            background: #fbdada;
+        }
+
+        .activate-btn {
+            background: #e7f7ed;
+            color: #176b46;
+        }
+
+        .activate-btn:hover {
+            background: #ccebd7;
+        }
     </style>
 
 </head>
@@ -1682,34 +1826,60 @@ if ($selectedAttendanceUserId) {
                         value="<?= e($_SESSION['csrf_token']) ?>">
 
                     <div class="form-grid">
+
                         <div class="field">
-                            <label for="full_name">Full name</label>
-                            <input id="full_name" name="full_name"
-                                required maxlength="150">
+                            <label for="full_name">Full Name</label>
+                            <input
+                                id="full_name"
+                                name="full_name"
+                                type="text"
+                                placeholder="Enter full name"
+                                required
+                                maxlength="150"
+                                autocomplete="name">
                         </div>
 
                         <div class="field">
-                            <label for="email">Email address</label>
-                            <input id="email" name="email" type="email"
-                                required maxlength="190">
+                            <label for="email">Email Address</label>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                placeholder="Enter email address"
+                                required
+                                maxlength="190"
+                                autocomplete="email">
                         </div>
 
                         <div class="field">
-                            <label for="phone">Phone number</label>
-                            <input id="phone" name="phone" type="tel"
-                                maxlength="30">
+                            <label for="phone">Phone Number</label>
+                            <input
+                                id="phone"
+                                name="phone"
+                                type="tel"
+                                placeholder="Enter phone number"
+                                maxlength="30"
+                                autocomplete="tel">
                         </div>
 
                         <div class="field">
-                            <label for="password">Temporary password</label>
-                            <input id="password" name="password" type="password"
-                                required minlength="8" autocomplete="new-password">
+                            <label for="password">Temporary Password</label>
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                placeholder="Create a temporary password"
+                                required
+                                minlength="8"
+                                autocomplete="new-password">
+                            <small>Minimum 8 characters.</small>
                         </div>
 
                         <div class="field">
-                            <label for="role_name">User role</label>
+                            <label for="role_name">User Role</label>
                             <select id="role_name" name="role_name" required>
-                                <option value="">Select role</option>
+                                <option value="">Select user role</option>
+
                                 <?php foreach ($allowedRoles as $roleOption): ?>
                                     <option value="<?= e($roleOption) ?>">
                                         <?= e(ucwords(str_replace('_', ' ', $roleOption))) ?>
@@ -1720,9 +1890,10 @@ if ($selectedAttendanceUserId) {
 
                         <?php if ($currentRole === 'super_admin'): ?>
                             <div class="field">
-                                <label for="farm_id">Assign farm</label>
+                                <label for="farm_id">Assign Farm</label>
                                 <select id="farm_id" name="farm_id" required>
                                     <option value="">Select farm</option>
+
                                     <?php foreach ($farms as $farm): ?>
                                         <option value="<?= e((string)$farm['farm_id']) ?>">
                                             <?= e($farm['farm_name']) ?>
@@ -1732,16 +1903,27 @@ if ($selectedAttendanceUserId) {
                             </div>
                         <?php else: ?>
                             <div class="field">
-                                <label>Assigned farm</label>
-                                <input value="Your assigned farm" disabled>
-                                <small>The farm is assigned automatically.</small>
+                                <label for="assigned_farm">Assigned Farm</label>
+                                <input
+                                    id="assigned_farm"
+                                    type="text"
+                                    value="Your assigned farm"
+                                    disabled>
+                                <small>The user will automatically be assigned to your farm.</small>
                             </div>
                         <?php endif; ?>
+
                     </div>
 
-                    <button type="submit">Create User</button>
+                    <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+                        <button type="submit">
+                            <i class="fas fa-user-plus"></i>
+                            Create User
+                        </button>
+                    </div>
                 </form>
             </section>
+
 
 
             <section class="panel attendance-history-panel">
@@ -2187,6 +2369,7 @@ if ($selectedAttendanceUserId) {
 
             <section class="panel">
                 <h2>Existing Users</h2>
+
                 <div class="table-wrap">
                     <table>
                         <thead>
@@ -2198,21 +2381,85 @@ if ($selectedAttendanceUserId) {
                                 <th>Status</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             <?php if (!$users): ?>
                                 <tr>
                                     <td colspan="5">No users found for this view.</td>
                                 </tr>
                             <?php else: ?>
+
                                 <?php foreach ($users as $user): ?>
+
+                                    <?php
+                                    $canManageUser = false;
+
+                                    if ($isSuperAdmin) {
+                                        $canManageUser = (
+                                            (int)$user['user_id'] !== (int)$_SESSION['user_id']
+                                        );
+                                    } elseif ($currentRole === 'admin') {
+                                        $canManageUser = (
+                                            $user['role_name'] === 'farm_manager' &&
+                                            (int)$user['user_id'] !== (int)$_SESSION['user_id']
+                                        );
+                                    }
+
+                                    $isActive = ($user['status'] === 'active');
+                                    ?>
+
                                     <tr>
                                         <td><?= e($user['full_name']) ?></td>
+
                                         <td><?= e($user['email']) ?></td>
-                                        <td><?= e(ucwords(str_replace('_', ' ', $user['role_name']))) ?></td>
-                                        <td><?= e($user['farm_name'] ?? 'Not assigned') ?></td>
-                                        <td><?= e($user['status'] ?? 'Unknown') ?></td>
+
+                                        <td>
+                                            <?= e(ucwords(str_replace('_', ' ', $user['role_name']))) ?>
+                                        </td>
+
+                                        <td>
+                                            <?= e($user['farm_name'] ?? 'Not assigned') ?>
+                                        </td>
+
+                                        <td>
+                                            <div style="display:flex; align-items:center; gap:10px;">
+
+                                                <span class="user-status <?= $isActive ? 'active' : 'inactive' ?>">
+                                                    <?= $isActive ? 'Active' : 'Inactive' ?>
+                                                </span>
+
+                                                <?php if ($canManageUser): ?>
+                                                    <form method="POST"
+                                                        action="users.php"
+                                                        onsubmit="return confirm('Are you sure you want to <?= $isActive ? 'deactivate' : 'activate' ?> this user?');">
+
+                                                        <input type="hidden" name="action" value="toggle_user_status">
+
+                                                        <input type="hidden"
+                                                            name="csrf_token"
+                                                            value="<?= e($_SESSION['csrf_token']) ?>">
+
+                                                        <input type="hidden"
+                                                            name="user_id"
+                                                            value="<?= (int)$user['user_id'] ?>">
+
+                                                        <input type="hidden"
+                                                            name="new_status"
+                                                            value="<?= $isActive ? 'inactive' : 'active' ?>">
+
+                                                        <button type="submit"
+                                                            class="status-action <?= $isActive ? 'deactivate-btn' : 'activate-btn' ?>">
+                                                            <?= $isActive ? 'Deactivate' : 'Activate' ?>
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+
+                                            </div>
+                                        </td>
                                     </tr>
+
                                 <?php endforeach; ?>
+
                             <?php endif; ?>
                         </tbody>
                     </table>

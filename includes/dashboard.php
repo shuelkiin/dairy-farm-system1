@@ -1305,7 +1305,7 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
 
                 </div>
 
-               
+
 
 
 
@@ -1455,31 +1455,31 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
             const menuBtn = document.getElementById('mobileMenuBtn');
             const overlay = document.getElementById('sidebarOverlay');
 
-            if (!sidebar || !menuBtn || !overlay) return;
+            if (sidebar && menuBtn && overlay) {
+                function openMenu() {
+                    sidebar.classList.add('active');
+                    overlay.classList.add('active');
+                }
 
-            function openMenu() {
-                sidebar.classList.add('active');
-                overlay.classList.add('active');
+                function closeMenu() {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                }
+
+                menuBtn.addEventListener('click', function() {
+                    sidebar.classList.contains('active') ? closeMenu() : openMenu();
+                });
+
+                overlay.addEventListener('click', closeMenu);
+
+                sidebar.querySelectorAll('a').forEach(function(link) {
+                    link.addEventListener('click', closeMenu);
+                });
+
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape') closeMenu();
+                });
             }
-
-            function closeMenu() {
-                sidebar.classList.remove('active');
-                overlay.classList.remove('active');
-            }
-
-            menuBtn.addEventListener('click', function() {
-                sidebar.classList.contains('active') ? closeMenu() : openMenu();
-            });
-
-            overlay.addEventListener('click', closeMenu);
-
-            sidebar.querySelectorAll('a').forEach(function(link) {
-                link.addEventListener('click', closeMenu);
-            });
-
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape') closeMenu();
-            });
         });
     </script>
 
@@ -1487,6 +1487,7 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+
             const farmLabels = <?= json_encode(
                                     array_column($farms, 'farm_name'),
                                     JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
@@ -1504,6 +1505,13 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
 
             if (!canvas) return;
 
+            // Calculate independent scale limits
+            const maxMilk = Math.max(...milkValues, 0);
+            const maxCows = Math.max(...cowValues, 0);
+
+            const milkScale = maxMilk > 0 ? maxMilk * 1.15 : 5;
+            const cowScale = maxCows > 0 ? Math.ceil(maxCows * 1.15) : 5;
+
             new Chart(canvas, {
                 type: 'bar',
 
@@ -1514,14 +1522,18 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
                             data: milkValues,
                             backgroundColor: '#23865b',
                             borderRadius: 6,
-                            yAxisID: 'y'
+                            yAxisID: 'y',
+                            barPercentage: 0.65,
+                            categoryPercentage: 0.7
                         },
                         {
                             label: 'Cows milked',
                             data: cowValues,
                             backgroundColor: '#183b33',
                             borderRadius: 6,
-                            yAxisID: 'y1'
+                            yAxisID: 'y1',
+                            barPercentage: 0.65,
+                            categoryPercentage: 0.7
                         }
                     ]
                 },
@@ -1530,15 +1542,43 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
                     responsive: true,
                     maintainAspectRatio: false,
 
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+
                     plugins: {
                         legend: {
                             position: 'bottom'
+                        },
+
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+
+                                    if (context.dataset.yAxisID === 'y') {
+                                        return ' Milk produced: ' + value + ' Litres';
+                                    }
+
+                                    return ' Cows milked: ' + value;
+                                }
+                            }
                         }
                     },
 
                     scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+
                         y: {
                             beginAtZero: true,
+                            min: 0,
+                            max: milkScale,
+                            position: 'left',
                             title: {
                                 display: true,
                                 text: 'Milk produced (Litres)'
@@ -1547,9 +1587,15 @@ $firstName = explode(' ', trim($_SESSION['full_name']))[0] ?? 'there';
 
                         y1: {
                             beginAtZero: true,
+                            min: 0,
+                            max: cowScale,
                             position: 'right',
                             grid: {
                                 drawOnChartArea: false
+                            },
+                            ticks: {
+                                precision: 0,
+                                stepSize: 1
                             },
                             title: {
                                 display: true,
